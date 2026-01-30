@@ -6,3 +6,5 @@
 - [server-stats](./server-stats/README.md): [roadmap.sh](https://roadmap.sh/projects/server-stats)
 
 # Python Projects
+
+- [task-creator](./task-tracker-cli/README.md): [roadmap.sh](https://roadmap.sh/projects/task-tracker)
