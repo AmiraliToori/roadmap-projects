@@ -147,8 +147,8 @@ class TaskList:
         raise ValueError("The ID could not found.\n")
 
     def remove_specific_task(self, id: str) -> None:
-        for task_number in self.list:
-            if self.list[task_number].id == id:
+        for task_number in range(len(self.list)):
+            if self.list[task_number].id == id[0]:
                 del self.list[task_number]
                 self.write_json_file()
                 print(f"The {id} sucessfully deleted!")
