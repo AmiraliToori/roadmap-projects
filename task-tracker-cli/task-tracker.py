@@ -147,14 +147,18 @@ class TaskList:
         raise ValueError("The ID could not found.\n")
 
     def remove_specific_task(self, id: str) -> None:
-        for task_number in range(len(self.list)):
-            if self.list[task_number].id == id[0]:
-                del self.list[task_number]
-                self.write_json_file()
-                print(f"The {id} sucessfully deleted!")
-                return None
-
-        raise ValueError("The ID could not found.\n")
+        try:
+            list_cp = self.list[:]
+            for task_index, task in enumerate(list_cp):
+                if list_cp[task_index].id in id:
+                    self.list.remove(task)
+                    print(f"The {task.id} sucessfully deleted!")
+        except IndexError as e:
+            print(f"The Index was out of the range.\nMore detail: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"An Exception ocurred.\nMore detail: {e}")
+            sys.exit(1)
 
 
 def arguments() -> argparse.Namespace:
@@ -181,7 +185,7 @@ def arguments() -> argparse.Namespace:
     update_parser.add_argument("description", type=str, help="New description", nargs=1)
 
     delete_parser = subparsers.add_parser("delete", help="Delete a task")
-    delete_parser.add_argument("id", type=str, help="ID of the task", nargs=1)
+    delete_parser.add_argument("id", type=str, help="ID of the task", nargs="+")
 
     mark_progress_parser = subparsers.add_parser(
         "mark-in-progress", help="Mark a task as 'in-progress'"
