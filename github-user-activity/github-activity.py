@@ -4,49 +4,71 @@ import requests
 import sys
 import re
 
+# --- Aesthetics Configuration ---
 
-class COLOR:
-    """
-    ANSI TrueColor helper for Catppuccin Mocha theme.
-    Format: \033[38;2;R;G;Bm for Foreground
-    Format: \033[48;2;R;G;Bm for Background
-    """
 
-    # --- Styles ---
+class Colors:
+    """Catppuccin Mocha Palette (TrueColor)"""
+
     RESET = "\033[0m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
     ITALIC = "\033[3m"
     UNDERLINE = "\033[4m"
-    STRIKETHROUGH = "\033[9m"
 
-    ROSEWATER = "\033[38;2;245;224;220m"  # #f5e0dc
-    FLAMINGO = "\033[38;2;242;205;205m"  # #f2cdcd
-    PINK = "\033[38;2;245;194;231m"  # #f5c2e7
-    MAUVE = "\033[38;2;203;166;247m"  # #cba6f7
-    RED = "\033[38;2;237;135;150m"  # #f38ba8
-    MAROON = "\033[38;2;238;153;160m"  # #eba0ac
-    PEACH = "\033[38;2;245;169;127m"  # #fab387
-    YELLOW = "\033[38;2;238;212;159m"  # #f9e2af
-    GREEN = "\033[38;2;166;227;161m"  # #a6e3a1
-    TEAL = "\033[38;2;148;226;213m"  # #94e2d5
-    SKY = "\033[38;2;137;220;235m"  # #89dceb
-    SAPPHIRE = "\033[38;2;122;162;247m"  # #74c7ec
-    BLUE = "\033[38;2;137;180;250m"  # #89b4fa
-    LAVENDER = "\033[38;2;180;190;254m"  # #b4befe
-    TEXT = "\033[38;2;205;214;244m"  # #cdd6f4
-    SUBTEXT1 = "\033[38;2;186;194;222m"  # #bac2de
-    SUBTEXT0 = "\033[38;2;166;173;200m"  # #a6adc8
+    # Core Palette
+    ROSEWATER = "\033[38;2;245;224;220m"
+    FLAMINGO = "\033[38;2;242;205;205m"
+    PINK = "\033[38;2;245;194;231m"
+    MAUVE = "\033[38;2;203;166;247m"
+    RED = "\033[38;2;237;135;150m"
+    MAROON = "\033[38;2;238;153;160m"
+    PEACH = "\033[38;2;245;169;127m"
+    YELLOW = "\033[38;2;238;212;159m"
+    GREEN = "\033[38;2;166;227;161m"
+    TEAL = "\033[38;2;148;226;213m"
+    SKY = "\033[38;2;137;220;235m"
+    SAPPHIRE = "\033[38;2;122;162;247m"
+    BLUE = "\033[38;2;137;180;250m"
+    LAVENDER = "\033[38;2;180;190;254m"
+    TEXT = "\033[38;2;205;214;244m"
+    SUBTEXT1 = "\033[38;2;186;194;222m"
+    OVERLAY0 = "\033[38;2;108;112;134m"
 
-    # --- Backgrounds ---
-    BG_SURFACE0 = "\033[48;2;49;50;68m"  # #313244
-    BG_BASE = "\033[48;2;30;30;46m"  # #1e1e2e
-    BG_MANTLE = "\033[48;2;24;24;37m"  # #181825
+    # Backgrounds
+    BG_SURFACE0 = "\033[48;2;49;50;68m"
+
+
+class Icons:
+    """Nerd Font Glyphs"""
+
+    GITHUB = ""
+    USER = ""
+    LOCATION = ""
+    ERROR = ""
+    WARN = ""
+    INFO = ""
+
+    # Events
+    PUSH = ""
+    STAR = ""
+    TRASH = ""
+    PR = ""
+    CREATE = ""
+    COMMENT = ""
+    ISSUE = ""
+    CLOCK = ""
+    REPO = ""
+    TAG = ""
+
+
+C = Colors
+I = Icons
 
 
 def validate_user_name() -> str:
     if len(sys.argv) > 2 or len(sys.argv) == 0:
-        print(f"Usage {sys.argv[0]} <username>")
+        print(f"{C.RED}{I.ERROR} Usage:{C.RESET} {sys.argv[0]} <username>")
         sys.exit(1)
 
     user_name = str(sys.argv[1])
@@ -55,14 +77,18 @@ def validate_user_name() -> str:
         r" |!|\"|#|\$|%|&|\'|\(|\)|\*|\+|,|\.|/|:|;|<|=|>|\?|@|\[|\]|\^|_|`|\{|\||\}|~|[A-Z]",
         user_name,
     ):
-        print("The username can only contain 'lowerspace','0-9','-' characters.")
+        print(
+            f"{C.RED}{I.ERROR} Invalid Input:{C.RESET} The username can only contain 'lowerspace','0-9','-' characters."
+        )
         sys.exit(1)
     elif len(user_name) == 0:
-        print("Minimum characters for user is 1. You entered empty.")
+        print(
+            f"{C.RED}{I.ERROR} Input Error:{C.RESET} Minimum characters for user is 1. You entered empty."
+        )
         sys.exit(1)
     elif len(user_name) >= 40:
         print(
-            "Maximum characters of a username GitHub account is 39. You entered more than that!"
+            f"{C.RED}{I.ERROR} Input Error:{C.RESET} Maximum characters of a username GitHub account is 39. You entered more than that!"
         )
         sys.exit(1)
     else:
@@ -75,31 +101,37 @@ def verify_user_name(user_name: str):
         if response.status_code == 200:
             return True
         elif response.status_code == 404:
-            print("404: User Not found")
+            print(f"{C.RED}{I.ERROR} 404:{C.RESET} User Not found")
             sys.exit(1)
         elif response.status_code == 403:
-            print("403: Forbidden")
+            print(f"{C.YELLOW}{I.WARN} 403:{C.RESET} Forbidden")
             sys.exit(1)
         elif response.status_code == 304:
-            print("304: Not Modified")
+            print(f"{C.BLUE}{I.INFO} 304:{C.RESET} Not Modified")
             sys.exit(1)
         elif response.status_code == 503:
-            print("503: Service Not Available")
+            print(f"{C.RED}{I.ERROR} 503:{C.RESET} Service Not Available")
             sys.exit(1)
 
     except requests.exceptions.Timeout as e:
         print(
-            f"Connection Timeout. There is some problem in conncetion.\n\nMore detail:\n{e}"
+            f"{C.RED}{I.ERROR} Connection Timeout:{C.RESET} There is some problem in connection.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
         )
         sys.exit(1)
     except requests.exceptions.HTTPError as e:
-        print(f"An HTTP error occured.\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} HTTP Error:{C.RESET} An HTTP error occurred.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
     except requests.exceptions.InvalidURL as e:
-        print(f"URL is invalid!\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} Invalid URL:{C.RESET} URL is invalid!\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
     except requests.exceptions.RequestException as e:
-        print(f"There is a rare exception occured.\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} Exception:{C.RESET} A rare exception occurred.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
 
 
@@ -111,56 +143,67 @@ def reformat_date(date_time: str) -> str:
 
 
 def handling_json(events) -> None:
-    print(f"{COLOR.BOLD}{COLOR.MAUVE}Output:{COLOR.RESET}")
+    print(f"\n{C.BOLD}{C.MAUVE}{I.GITHUB}  Recent Activity Log:{C.RESET}")
+    print(f"{C.DIM}──────────────────────────────────────────────────{C.RESET}")
+
     for event in events:
         repository = event["repo"]["name"]
         created_at = reformat_date(event["created_at"])
 
-        # print(json.dumps(event, indent=4))
+        # Base format for time
+        time_str = f"{C.DIM}{I.CLOCK} {created_at}{C.RESET}"
+        repo_str = f"{C.BOLD}{C.BLUE}{repository}{C.RESET}"
+
         if event["type"] == "PushEvent":
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {COLOR.BOLD}{COLOR.GREEN}Pushed{COLOR.RESET} into {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.GREEN}{I.PUSH}  Pushed{C.RESET} commits to {repo_str}   {time_str}"
             )
 
         elif event["type"] == "WatchEvent":
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {COLOR.BOLD}{COLOR.YELLOW}Starred{COLOR.RESET} the {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.YELLOW}{I.STAR}  Starred{C.RESET} the repo {repo_str}   {time_str}"
             )
 
         elif event["type"] == "DeleteEvent":
             item = event["payload"]["ref"]
             item_type = event["payload"]["ref_type"]
-
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {COLOR.BOLD}{COLOR.RED}Deleted{COLOR.RESET} the {COLOR.UNDERLINE}{COLOR.MAROON}{item} {item_type}{COLOR.RESET} from {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.RED}{I.TRASH}  Deleted{C.RESET} {item_type} {C.MAROON}{C.UNDERLINE}{item}{C.RESET} from {repo_str}   {time_str}"
             )
 
         elif event["type"] == "PullRequestEvent":
             action = event["payload"]["action"]
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {COLOR.BOLD}{COLOR.GREEN}{action.capitalize()}{COLOR.RESET} the {COLOR.BOLD}{COLOR.TEAL}pull request{COLOR.RESET} for {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.TEAL}{I.PR}  {action.capitalize()}{C.RESET} pull request in {repo_str}   {time_str}"
             )
+
         elif event["type"] == "CreateEvent":
             item = event["payload"]["ref"]
             item_type = event["payload"]["ref_type"]
+            # If item is None (repository creation), handle gracefully
+            ref_display = (
+                f"{C.MAROON}{C.UNDERLINE}{item}{C.RESET}" if item else "repository"
+            )
 
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {COLOR.BOLD}{COLOR.GREEN}Created{COLOR.RESET} {COLOR.UNDERLINE}{COLOR.MAROON}{item} {item_type}{COLOR.RESET}  on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.GREEN}{I.CREATE}  Created{C.RESET} {item_type} {ref_display}   {time_str}"
             )
+
         elif event["type"] == "IssueCommentEvent":
             action = event["payload"]["action"]
             issue_title = event["payload"]["issue"]["title"]
-
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {action.capitalize()} comment in {COLOR.UNDERLINE}{COLOR.PINK}{issue_title}{COLOR.RESET} at {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.PINK}{I.COMMENT}  {action.capitalize()}{C.RESET} comment on {C.ITALIC}'{issue_title}'{C.RESET} in {repo_str}   {time_str}"
             )
+
         elif event["type"] == "IssuesEvent":
             action = event["payload"]["action"]
             issue_title = event["payload"]["issue"]["title"]
-
             print(
-                f"{COLOR.BOLD}{COLOR.RED}-{COLOR.RESET} {action.capitalize()} {COLOR.BOLD}{COLOR.RED}issue{COLOR.RESET} {issue_title} at {COLOR.BOLD}{COLOR.PEACH}{repository}{COLOR.RESET} on {COLOR.BOLD}{COLOR.BLUE}{created_at}{COLOR.RESET}."
+                f" {C.PEACH}{I.ISSUE}  {action.capitalize()}{C.RESET} issue {C.ITALIC}'{issue_title}'{C.RESET} in {repo_str}   {time_str}"
             )
+
+    print(f"{C.DIM}──────────────────────────────────────────────────{C.RESET}\n")
 
 
 def get_events_url(events_url: str) -> None:
@@ -173,31 +216,44 @@ def get_events_url(events_url: str) -> None:
             handling_json(events)
     except requests.exceptions.Timeout as e:
         print(
-            f"Connection Timeout. There is some problem in conncetion.\n\nMore detail:\n{e}"
+            f"{C.RED}{I.ERROR} Connection Timeout:{C.RESET} There is some problem in connection.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
         )
         sys.exit(1)
     except requests.exceptions.HTTPError as e:
-        print(f"An HTTP error occured.\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} HTTP Error:{C.RESET} An HTTP error occurred.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
     except requests.exceptions.InvalidURL as e:
-        print(f"URL is invalid!\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} Invalid URL:{C.RESET} URL is invalid!\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
     except requests.exceptions.RequestException as e:
-        print(f"There is a rare exception occured.\n\nMore detail:\n{e}")
+        print(
+            f"{C.RED}{I.ERROR} Exception:{C.RESET} A rare exception occurred.\n\n{C.DIM}More detail:\n{e}{C.RESET}"
+        )
         sys.exit(1)
 
 
 def get_profile_url(profile_url: str):
-    profile = requests.get(profile_url)
-    profile_json = profile.json()
+    try:
+        profile = requests.get(profile_url)
+        profile.raise_for_status()
+        profile_json = profile.json()
 
-    user_name = profile_json["login"]
-    name = profile_json["name"]
-    location = profile_json["location"]
+        # Safely get values, handling None/Null from API
+        user_name = str(profile_json.get("login", "N/A"))
+        name = str(profile_json.get("name") or "N/A")  # 'or' handles None
+        location = str(profile_json.get("location") or "N/A")
 
-    print(f"\n{COLOR.BOLD}{COLOR.MAUVE} USER NAME: {user_name}{COLOR.RESET}")
-    print(f"{COLOR.BOLD}{COLOR.MAUVE} Name: {name}{COLOR.RESET}")
-    print(f"{COLOR.BOLD}{COLOR.MAUVE} Location: {location}{COLOR.RESET}\n")
+        print(f"{C.BOLD}{C.MAUVE}{I.GITHUB}  User Profile {C.RESET}")
+
+        print(I.USER, "Username", user_name)
+        print("", "Name", name)
+        print(I.LOCATION, "Location", location)
+    except Exception:
+        print(f"{C.RED}{I.ERROR} Could not fetch profile data.{C.RESET}")
 
 
 def main() -> None:
