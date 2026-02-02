@@ -8,3 +8,4 @@
 # Python Projects
 
 - [task-creator](./task-tracker-cli/README.md): [roadmap.sh](https://roadmap.sh/projects/task-tracker)
+- [github-activity](/github-user-activity/README.md): [roadmap.sh](https://roadmap.sh/projects/expense-tracker)
