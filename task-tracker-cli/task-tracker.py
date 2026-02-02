@@ -10,6 +10,55 @@ import argparse
 
 from typing import Any, List
 
+# --- Aesthetics Configuration ---
+
+@dataclass(frozen=True)
+class Colors:
+    """Catppuccin Mocha Palette (TrueColor)"""
+    RESET: str = "\033[0m"
+    BOLD: str = "\033[1m"
+    DIM: str = "\033[2m"
+    
+    # Core Colors
+    ROSEWATER: str = "\033[38;2;245;224;220m"
+    FLAMINGO: str = "\033[38;2;242;205;205m"
+    PINK: str = "\033[38;2;245;194;231m"
+    MAUVE: str = "\033[38;2;203;166;247m"
+    RED: str = "\033[38;2;237;135;150m"
+    MAROON: str = "\033[38;2;238;153;160m"
+    PEACH: str = "\033[38;2;245;169;127m"
+    YELLOW: str = "\033[38;2;238;212;159m"
+    GREEN: str = "\033[38;2;166;227;161m"
+    TEAL: str = "\033[38;2;148;226;213m"
+    SKY: str = "\033[38;2;137;220;235m"
+    SAPPHIRE: str = "\033[38;2;122;162;247m"
+    BLUE: str = "\033[38;2;137;180;250m"
+    LAVENDER: str = "\033[38;2;180;190;254m"
+    TEXT: str = "\033[38;2;205;214;244m"
+    SUBTEXT1: str = "\033[38;2;186;194;222m"
+    OVERLAY0: str = "\033[38;2;108;112;134m"
+
+@dataclass(frozen=True)
+class Icons:
+    """Nerd Font Glyphs"""
+    CHECK: str = ""
+    ERROR: str = ""
+    WARN: str = ""
+    INFO: str = ""
+    TASK: str = ""
+    CALENDAR: str = ""
+    CLOCK: str = ""
+    EDIT: str = ""
+    TRASH: str = ""
+    TODO: str = ""
+    PROGRESS: str = ""
+    DONE: str = ""
+    ARROW: str = ""
+
+C = Colors()
+I = Icons()
+
+# --- Application Logic ---
 
 @dataclass
 class Task:
@@ -24,13 +73,13 @@ class Task:
         """Validate the value and type of the description"""
         if description.isspace():
             raise ValueError(
-                "Invalid Input! The description cannot ONLY contain whitespaces!"
+                f"{C.RED}{I.ERROR} Invalid Input!{C.RESET} The description cannot ONLY contain whitespaces!"
             )
 
         description_length = len(description)
         if description_length > 100:
             raise ValueError(
-                f"The length of the description: {description_length}\n The length of the description CANNOT be GREATER THAN 100 CHARACTERS."
+                f"{C.RED}{I.ERROR} Length Error:{C.RESET} The description length ({description_length}) CANNOT be GREATER THAN 100 CHARACTERS."
             )
 
         return description
@@ -40,7 +89,7 @@ class Task:
         """Validate the value and type of the status"""
         if status not in ["todo", "in-progress", "done"]:
             raise ValueError(
-                "The input value of the status is Invalid! There are already three status: 'todo', 'in-progress', 'done'"
+                f"{C.RED}{I.ERROR} Invalid Status!{C.RESET} Allowed values: {C.YELLOW}'todo', 'in-progress', 'done'{C.RESET}"
             )
 
         return status
@@ -54,10 +103,24 @@ class Task:
         self.updatedAt = (datetime.now()).strftime("%Y/%m/%d %H:%M:%S")
 
     def print_description(self) -> None:
-        print(
-            f"Task:\n\tID: {self.id}\n\tDescription: {self.description}\n\tStatus: {self.status}\n\tCreated At: {self.createdAt}\n\tUpdated At: {self.updatedAt}\n"
-        )
-        print("-------------------------------------------------------------\n")
+        # Determine icon color based on status
+        status_color = C.TEXT
+        status_icon = I.TODO
+        if self.status == "in-progress":
+            status_color = C.YELLOW
+            status_icon = I.PROGRESS
+        elif self.status == "done":
+            status_color = C.GREEN
+            status_icon = I.DONE
+
+        print(f"{C.MAUVE}╭──────────────────────────────────────────────────────────────╮{C.RESET}")
+        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}{C.LAVENDER}{I.TASK} Task ID:{C.RESET} {self.id}")
+        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}Description:{C.RESET} {self.description}")
+        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}Status:{C.RESET}      {status_color}{status_icon} {self.status.upper()}{C.RESET}")
+        print(f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CALENDAR} Created:  {self.createdAt}{C.RESET}")
+        if self.updatedAt:
+            print(f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CLOCK} Updated:  {self.updatedAt}{C.RESET}")
+        print(f"{C.MAUVE}╰──────────────────────────────────────────────────────────────╯{C.RESET}\n")
 
     def set_description(self, new_description) -> None:
         old_description = self.description
@@ -65,12 +128,13 @@ class Task:
 
         try:
             self.description = self._check_description(new_description[0])
-            print(
-                f"Task: {self.id}\nOld Description: {old_description}\nNew Description: {self.description}"
-            )
+            print(f"{C.BLUE}{I.EDIT} Update Successful:{C.RESET}")
+            print(f"  {C.OVERLAY0}ID:{C.RESET} {self.id}")
+            print(f"  {C.RED}-{C.RESET} {old_description}")
+            print(f"  {C.GREEN}+{C.RESET} {self.description}")
             self._update_date_time()
         except Exception as e:
-            print(f"Something went wrong!\n\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}")
             self.description = old_description
             self.updatedAt = old_updated_date_time
 
@@ -80,12 +144,13 @@ class Task:
 
         try:
             self.status = self._check_status(input_status)
-            print(
-                f"Task: {self.id}\nDescription: {self.description}\nOld Status: {old_status}\nNew Status: {self.status}"
-            )
+            print(f"{C.TEAL}{I.CHECK} Status Updated:{C.RESET}")
+            print(f"  {C.OVERLAY0}ID:{C.RESET} {self.id}")
+            print(f"  {C.RED}-{C.RESET} {old_status}")
+            print(f"  {C.GREEN}+{C.RESET} {self.status}")
             self._update_date_time()
         except Exception as e:
-            print(f"Something went wrong!\n\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Status Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}")
             self.status = old_status
             self.updatedAt = old_updated_date_time
 
@@ -106,15 +171,19 @@ class TaskList:
                 return []
             else:
                 with open(file_path, "r") as f:
+                    content = f.read()
+                    if not content.strip():  # Check for empty file
+                        return []
+                    f.seek(0)
                     json_data = json.load(f)
 
                 return [Task(**item) for item in json_data]
 
         except FileNotFoundError as e:
-            print(f"Could not found the {file_path}.\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} File Not Found:{C.RESET} {file_path}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
         except Exception as e:
-            print(f"An Exception ocurred.\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Unexpected Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
 
     def write_json_file(self) -> None:
@@ -126,44 +195,55 @@ class TaskList:
             with open(file_path, "w") as f:
                 json.dump(json_data, f, indent=4)
         except FileNotFoundError as e:
-            print(f"Could Not find the {file_path} 'taskDB.json'\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Database Missing:{C.RESET} {file_path}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
         except Exception as e:
-            print(f"An Exception ocurred: {e}")
+            print(f"{C.RED}{I.ERROR} Write Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
 
     def __post_init__(self) -> None:
         self.list = self.load_json_file()
 
     def create_task(self, description: str) -> None:
-        self.list.append(Task(description))
+        new_task = Task(description)
+        self.list.append(new_task)
         self.write_json_file()
+        print(f"{C.GREEN}{I.CHECK} Task Created Successfully!{C.RESET}")
+        print(f"  {C.BOLD}ID:{C.RESET} {new_task.id}")
+        print(f"  {C.BOLD}Desc:{C.RESET} {description}")
 
     def return_specific_task(self, id: str) -> Task:
         for task in self.list:
             if task.id == id[0]:
                 return task
 
-        raise ValueError("The ID could not found.\n")
+        print(f"{C.RED}{I.ERROR} Task Not Found:{C.RESET} ID {C.YELLOW}{id[0]}{C.RESET} does not exist.")
+        sys.exit(1)
 
     def remove_specific_task(self, id: str) -> None:
         try:
             list_cp = self.list[:]
+            found = False
             for task_index, task in enumerate(list_cp):
                 if list_cp[task_index].id in id:
                     self.list.remove(task)
-                    print(f"The {task.id} sucessfully deleted!")
+                    print(f"{C.RED}{I.TRASH} Deleted Task:{C.RESET} {C.DIM}{task.id}{C.RESET}")
+                    found = True
+            
+            if not found:
+                 print(f"{C.YELLOW}{I.WARN} No task found with ID:{C.RESET} {id}")
+                 
         except IndexError as e:
-            print(f"The Index was out of the range.\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Index Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
         except Exception as e:
-            print(f"An Exception ocurred.\nMore detail: {e}")
+            print(f"{C.RED}{I.ERROR} Error Removing Task:{C.RESET}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
 
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Manage your tasks in terminal environment with Task-CLI"
+        description=f"{C.MAUVE}{I.TASK} Task-CLI Tracker{C.RESET} - Manage your tasks efficiently."
     )
 
     subparsers = parser.add_subparsers(dest="command", help="The available commands")
@@ -235,13 +315,19 @@ def main():
         task_list.write_json_file()
 
     if args.command == "list":
+        count = 0
         if args.list == "all":
             for task in task_list.list:
                 task.print_description()
+                count += 1
         elif args.list in ["done", "in-progress", "todo"]:
             for task in task_list.list:
                 if task.status == args.list:
                     task.print_description()
+                    count += 1
+        
+        if count == 0:
+            print(f"{C.OVERLAY0}{I.INFO} No tasks found for category: {args.list}{C.RESET}")
 
 
 if __name__ == "__main__":
