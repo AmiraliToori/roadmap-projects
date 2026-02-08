@@ -3,11 +3,77 @@
 import argparse
 import sys
 
+from datetime import datetime
+
+
+class Expense:
+    __id_counter = 0
+    _available_ids = []
+
+    def __init__(self, description: str, amount: float) -> None:
+        if Expense._available_ids:
+            self.__id = Expense._available_ids.pop(0)
+        else:
+            self.__id = +Expense.__id_counter
+
+        self._description = description
+        self._amount = amount
+        self._date = datetime.now().strftime("%Y-%m-%d")
+
+    def return_specification_dict(self) -> dict:
+        return {
+            self.id: {
+                "description": self.description,
+                "amount": self.amount,
+                "date": self.date,
+            }
+        }
+
+    def delete(self, id: int) -> None:
+        """Delete a ID."""
+        Expense._available_ids.append(id)
+        Expense._available_ids.sort()
+
+    @property
+    def id(self) -> int:
+        """Getter: ID"""
+        return self.__id
+
+    @property
+    def description(self) -> str:
+        """Getter: description"""
+        return self._description
+
+    @description.setter
+    def description(self, new_description: str) -> None:
+        """Setter: description"""
+        self.description = new_description
+
+    @property
+    def amount(self) -> float:
+        """Getter: amount"""
+        return self._amount
+
+    @amount.setter
+    def amount(self, new_amount: float) -> None:
+        """Setter: amount"""
+        self.amount = new_amount
+
+    @property
+    def date(self) -> str:
+        """Getter: date"""
+        return self._date
+
+    @date.setter
+    def date(self) -> None:
+        """Setter: update date"""
+        self.date = datetime.now().strftime("%Y-%m-%d")
+
 
 def validate_amount(input_amount: str) -> int:
     """Validate the input amount"""
     try:
-        input_amount = int(input_amount)
+        input_amount = float(input_amount)
         if input_amount <= 0:
             raise ValueError("The input amount cannot be ZERO or NEGATIVE!")
         else:
@@ -86,6 +152,23 @@ def arguments() -> argparse.Namespace:
         help="Specifiy the item id that you want to get deleted.",
         metavar="<ID>",
         nargs=1,
+    )
+
+    update_parser = subparser.add_parser("update", help="Update a specific item.")
+    update_parser.add_argument(
+        "--id",
+        help="Specify the item id that you want to get updated.",
+        metavar="<ID>",
+        nargs=1,
+    )
+    update_parser.add_argument(
+        "--description",
+        help="The new description for the item.",
+        metavar="<DESCRIPTION>",
+        nargs=1,
+    )
+    update_parser.add_argument(
+        "--amount", help="The new amount for the item.", metavar="<AMOUNT>", nargs=1
     )
 
     return parser.parse_args()
