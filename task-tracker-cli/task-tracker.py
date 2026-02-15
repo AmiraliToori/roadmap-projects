@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import sys
+import os
 import uuid
 from pathlib import Path
 import json
@@ -12,13 +13,15 @@ from typing import Any, List
 
 # --- Aesthetics Configuration ---
 
+
 @dataclass(frozen=True)
 class Colors:
     """Catppuccin Mocha Palette (TrueColor)"""
+
     RESET: str = "\033[0m"
     BOLD: str = "\033[1m"
     DIM: str = "\033[2m"
-    
+
     # Core Colors
     ROSEWATER: str = "\033[38;2;245;224;220m"
     FLAMINGO: str = "\033[38;2;242;205;205m"
@@ -38,9 +41,11 @@ class Colors:
     SUBTEXT1: str = "\033[38;2;186;194;222m"
     OVERLAY0: str = "\033[38;2;108;112;134m"
 
+
 @dataclass(frozen=True)
 class Icons:
     """Nerd Font Glyphs"""
+
     CHECK: str = ""
     ERROR: str = ""
     WARN: str = ""
@@ -55,10 +60,12 @@ class Icons:
     DONE: str = ""
     ARROW: str = ""
 
+
 C = Colors()
 I = Icons()
 
 # --- Application Logic ---
+
 
 @dataclass
 class Task:
@@ -113,14 +120,26 @@ class Task:
             status_color = C.GREEN
             status_icon = I.DONE
 
-        print(f"{C.MAUVE}╭──────────────────────────────────────────────────────────────╮{C.RESET}")
-        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}{C.LAVENDER}{I.TASK} Task ID:{C.RESET} {self.id}")
+        print(
+            f"{C.MAUVE}╭──────────────────────────────────────────────────────────────╮{C.RESET}"
+        )
+        print(
+            f"{C.MAUVE}│{C.RESET} {C.BOLD}{C.LAVENDER}{I.TASK} Task ID:{C.RESET} {self.id}"
+        )
         print(f"{C.MAUVE}│{C.RESET} {C.BOLD}Description:{C.RESET} {self.description}")
-        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}Status:{C.RESET}      {status_color}{status_icon} {self.status.upper()}{C.RESET}")
-        print(f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CALENDAR} Created:  {self.createdAt}{C.RESET}")
+        print(
+            f"{C.MAUVE}│{C.RESET} {C.BOLD}Status:{C.RESET}      {status_color}{status_icon} {self.status.upper()}{C.RESET}"
+        )
+        print(
+            f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CALENDAR} Created:  {self.createdAt}{C.RESET}"
+        )
         if self.updatedAt:
-            print(f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CLOCK} Updated:  {self.updatedAt}{C.RESET}")
-        print(f"{C.MAUVE}╰──────────────────────────────────────────────────────────────╯{C.RESET}\n")
+            print(
+                f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CLOCK} Updated:  {self.updatedAt}{C.RESET}"
+            )
+        print(
+            f"{C.MAUVE}╰──────────────────────────────────────────────────────────────╯{C.RESET}\n"
+        )
 
     def set_description(self, new_description) -> None:
         old_description = self.description
@@ -150,27 +169,44 @@ class Task:
             print(f"  {C.GREEN}+{C.RESET} {self.status}")
             self._update_date_time()
         except Exception as e:
-            print(f"{C.RED}{I.ERROR} Status Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}")
+            print(
+                f"{C.RED}{I.ERROR} Status Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}"
+            )
             self.status = old_status
             self.updatedAt = old_updated_date_time
+
+
+def handle_path() -> str:
+    file_name = "taskDB.json"
+    home_path = os.getenv("HOME")
+    config_path = ".config/task-tracker/"
+
+    full_directory = os.path.join(home_path, config_path, file_name)
+
+    config_directory = os.path.join(home_path, config_path)
+
+    if not os.path.exists(config_directory):
+        os.mkdir(config_directory)
+        print("Initialize the directory...\n\n")
+
+    return full_directory
 
 
 @dataclass
 class TaskList:
     list = []
+    file_path: str = field(default_factory=handle_path)
 
-    @staticmethod
-    def load_json_file() -> List[dict[str | Any]]:
+    def load_json_file(self) -> List[dict[str | Any]]:
         """Load the data from the json file"""
-        file_path = "taskDB.json"
-        path = Path(file_path)
+        path = Path(self.file_path)
         try:
             if not path.exists():
-                with open(file_path, "w") as f:
+                with open(self.file_path, "w") as f:
                     f.write("")
                 return []
             else:
-                with open(file_path, "r") as f:
+                with open(self.file_path, "r") as f:
                     content = f.read()
                     if not content.strip():  # Check for empty file
                         return []
@@ -180,7 +216,9 @@ class TaskList:
                 return [Task(**item) for item in json_data]
 
         except FileNotFoundError as e:
-            print(f"{C.RED}{I.ERROR} File Not Found:{C.RESET} {file_path}\n{C.DIM}{e}{C.RESET}")
+            print(
+                f"{C.RED}{I.ERROR} File Not Found:{C.RESET} {self.file_path}\n{C.DIM}{e}{C.RESET}"
+            )
             sys.exit(1)
         except Exception as e:
             print(f"{C.RED}{I.ERROR} Unexpected Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
@@ -188,14 +226,15 @@ class TaskList:
 
     def write_json_file(self) -> None:
         """Write into json file"""
-        file_path = "taskDB.json"
 
         json_data = [asdict(obj) for obj in self.list]
         try:
-            with open(file_path, "w") as f:
+            with open(self.file_path, "w") as f:
                 json.dump(json_data, f, indent=4)
         except FileNotFoundError as e:
-            print(f"{C.RED}{I.ERROR} Database Missing:{C.RESET} {file_path}\n{C.DIM}{e}{C.RESET}")
+            print(
+                f"{C.RED}{I.ERROR} Database Missing:{C.RESET} {self.file_path}\n{C.DIM}{e}{C.RESET}"
+            )
             sys.exit(1)
         except Exception as e:
             print(f"{C.RED}{I.ERROR} Write Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
@@ -217,7 +256,9 @@ class TaskList:
             if task.id == id[0]:
                 return task
 
-        print(f"{C.RED}{I.ERROR} Task Not Found:{C.RESET} ID {C.YELLOW}{id[0]}{C.RESET} does not exist.")
+        print(
+            f"{C.RED}{I.ERROR} Task Not Found:{C.RESET} ID {C.YELLOW}{id[0]}{C.RESET} does not exist."
+        )
         sys.exit(1)
 
     def remove_specific_task(self, id: str) -> None:
@@ -227,17 +268,21 @@ class TaskList:
             for task_index, task in enumerate(list_cp):
                 if list_cp[task_index].id in id:
                     self.list.remove(task)
-                    print(f"{C.RED}{I.TRASH} Deleted Task:{C.RESET} {C.DIM}{task.id}{C.RESET}")
+                    print(
+                        f"{C.RED}{I.TRASH} Deleted Task:{C.RESET} {C.DIM}{task.id}{C.RESET}"
+                    )
                     found = True
-            
+
             if not found:
-                 print(f"{C.YELLOW}{I.WARN} No task found with ID:{C.RESET} {id}")
-                 
+                print(f"{C.YELLOW}{I.WARN} No task found with ID:{C.RESET} {id}")
+
         except IndexError as e:
             print(f"{C.RED}{I.ERROR} Index Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
             sys.exit(1)
         except Exception as e:
-            print(f"{C.RED}{I.ERROR} Error Removing Task:{C.RESET}\n{C.DIM}{e}{C.RESET}")
+            print(
+                f"{C.RED}{I.ERROR} Error Removing Task:{C.RESET}\n{C.DIM}{e}{C.RESET}"
+            )
             sys.exit(1)
 
 
@@ -325,9 +370,11 @@ def main():
                 if task.status == args.list:
                     task.print_description()
                     count += 1
-        
+
         if count == 0:
-            print(f"{C.OVERLAY0}{I.INFO} No tasks found for category: {args.list}{C.RESET}")
+            print(
+                f"{C.OVERLAY0}{I.INFO} No tasks found for category: {args.list}{C.RESET}"
+            )
 
 
 if __name__ == "__main__":
