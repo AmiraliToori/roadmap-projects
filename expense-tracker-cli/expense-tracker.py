@@ -126,10 +126,31 @@ class Expense:
         Expense._final_writing()
         Expense._write_counter()
 
+        print(
+            f"The {input_description} with {input_id} ID with amount of {input_amount} on {date} ADDED!"
+        )
+
     def delete(self, id: int) -> None:
         """Delete a ID."""
+        try:
+            expense_item = Expense.python_json_object["items"][id]
+            del Expense.python_json_object["items"][id]
+        except IndexError as e:
+            print(f"Out of range ID!\nMore detail: {e}")
+            sys.exit(1)
+
         Expense.available_ids.append(id)
         Expense.available_ids.sort()
+
+        Expense._final_writing()
+
+        item_description = expense_item.get("description")
+        item_amount = expense_item.get("amount")
+        item_date = expense_item.get("date")
+
+        print(
+            f"The item {id} deleted.\nDescription: {item_description}\nAmount: {item_amount}\nDate: {item_date}"
+        )
 
     def update_date(self) -> None:
         """Update date"""
@@ -257,7 +278,8 @@ def main() -> None:
 
     if args.command == "add":
         expense_record.add_expense_record(args.description[0], args.amount[0])
-        print(expense_record)
+    elif args.command == "delete":
+        expense_record.delete(args.id[0])
 
 
 if __name__ == "__main__":
