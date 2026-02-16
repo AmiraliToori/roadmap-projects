@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import re
+import os
 
 from datetime import datetime
 
@@ -13,7 +14,22 @@ from datetime import datetime
 
 
 class Expense:
-    file_path = Path("expenseDB.json")
+    @staticmethod
+    def _handle_path() -> Path:
+        file_name = "expenseDB.json"
+        home_path = os.getenv("HOME")
+        config_path = ".config/expense-tracker/"
+
+        config_directory = os.path.join(home_path, config_path)
+        full_path = os.path.join(home_path, config_path, file_name)
+
+        if not os.path.exists(config_directory):
+            os.mkdir(config_directory)
+            print(f"Making the config directory at {config_directory}...")
+
+        return full_path
+
+    file_path = Path(_handle_path())
 
     @staticmethod
     def _load_python_object(file_path: Path):
