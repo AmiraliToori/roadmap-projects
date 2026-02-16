@@ -140,10 +140,10 @@ class Expense:
             print(f"Out of range ID!\nMore detail: {e}")
             sys.exit(1)
 
-        Expense.available_ids.append(id)
-        Expense.available_ids.sort()
+        cls.available_ids.append(id)
+        cls.available_ids.sort()
 
-        Expense._final_writing()
+        cls._final_writing()
 
         item_description = expense_item.get("description")
         item_amount = expense_item.get("amount")
@@ -153,8 +153,19 @@ class Expense:
             f"The item {id} deleted.\nDescription: {item_description}\nAmount: {item_amount}\nDate: {item_date}"
         )
 
-    def list_items() -> None:
-        pass
+    @classmethod
+    def list_items(cls) -> None:
+        expense_items = cls.python_json_object.get("items")
+        for key, item in expense_items.items():
+            description = item.get("description")
+            amount = item.get("amount")
+            date = item.get("date")
+
+            print("ID:", key)
+            print(description)
+            print(amount)
+            print(date, "\n")
+            print("-------------------------------------")
 
     def update_date(self) -> None:
         """Update date"""
@@ -285,7 +296,7 @@ def main() -> None:
     elif args.command == "delete":
         expense_record.delete_item(args.id[0])
     elif args.command == "list":
-        pass
+        expense_record.list_items()
 
 
 if __name__ == "__main__":
