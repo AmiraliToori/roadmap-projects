@@ -7,9 +7,86 @@ import sys
 import re
 import os
 import csv
-
 from datetime import datetime
 
+# ==============================================================================
+#  THEME ENGINE (Catppuccin Mocha) & UTILS
+# ==============================================================================
+
+class Theme:
+    """ANSI Escape Codes for Catppuccin Mocha Palette"""
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    
+    # Colors
+    TEXT = "\033[38;2;205;214;244m"
+    SUBTEXT = "\033[38;2;166;173;200m"
+    OVERLAY = "\033[38;2;108;112;134m"
+    MAUVE = "\033[38;2;203;166;247m"   # Accent
+    BLUE = "\033[38;2;137;180;250m"    # Info
+    GREEN = "\033[38;2;166;227;161m"   # Success
+    RED = "\033[38;2;243;139;168m"     # Error
+    YELLOW = "\033[38;2;249;226;175m"  # Warning
+    PEACH = "\033[38;2;250;179;135m"
+
+    # Glyphs (Nerd Font)
+    ICON_SUCCESS = ""
+    ICON_ERROR = ""
+    ICON_WARN = ""
+    ICON_INFO = ""
+    ICON_MONEY = ""
+    ICON_DATE = ""
+    ICON_ID = ""
+    ICON_EDIT = ""
+    ICON_TRASH = ""
+    ICON_LIST = ""
+
+class UI:
+    @staticmethod
+    def print_success(msg: str):
+        print(f"\n {Theme.GREEN}{Theme.ICON_SUCCESS}  SUCCESS:{Theme.TEXT} {msg}{Theme.RESET}")
+
+    @staticmethod
+    def print_error(msg: str):
+        print(f"\n {Theme.RED}{Theme.ICON_ERROR}  ERROR:{Theme.TEXT} {msg}{Theme.RESET}")
+
+    @staticmethod
+    def print_info(msg: str):
+        print(f"\n {Theme.BLUE}{Theme.ICON_INFO}  INFO:{Theme.TEXT} {msg}{Theme.RESET}")
+
+    @staticmethod
+    def header(title: str):
+        print(f"\n {Theme.MAUVE}{Theme.BOLD}{title.upper()}{Theme.RESET}")
+        print(f" {Theme.OVERLAY}{'─' * 40}{Theme.RESET}")
+
+    @staticmethod
+    def table_row(col1, col2, col3, col4, header=False):
+        """Formats a strict columnar table row"""
+        c1_w, c2_w, c3_w, c4_w = 6, 14, 30, 12
+        
+        # Truncate description if too long
+        if len(str(col3)) > c3_w - 2:
+            col3 = str(col3)[:c3_w-3] + "…"
+
+        if header:
+            color = Theme.MAUVE + Theme.BOLD
+            reset = Theme.RESET
+            sep = f"{Theme.OVERLAY}│{Theme.RESET}"
+        else:
+            color = Theme.TEXT
+            reset = Theme.RESET
+            sep = f"{Theme.OVERLAY}│{Theme.RESET}"
+
+        # F-string padding
+        print(f" {color}{str(col1):<{c1_w}}{reset} {sep} "
+              f"{Theme.BLUE if not header else color}{str(col2):<{c2_w}}{reset} {sep} "
+              f"{color}{str(col3):<{c3_w}}{reset} {sep} "
+              f"{Theme.GREEN if not header else color}{str(col4):>{c4_w}}{reset}")
+
+    @staticmethod
+    def format_currency(amount):
+        return f"${float(amount):,.2f}"
 
 ############## Expense Class #################
 
@@ -26,8 +103,10 @@ class Expense:
         full_path = os.path.join(home_path, config_path, file_name)
 
         if not os.path.exists(config_directory):
-            os.mkdir(config_directory)
-            print(f"Making the config directory at {config_directory}...")
+            try:
+                os.mkdir(config_directory)
+            except OSError:
+                pass # Handle quietly or use print_error if strictly needed
 
         return full_path
 
@@ -55,15 +134,15 @@ class Expense:
                     return dict_object
 
         except IOError as e:
-            print(f"Something went wrong when writing and loading!\nMore detail: {e}")
+            UI.print_error(f"IO Error during load: {e}")
             sys.exit(1)
 
         except json.JSONDecodeError as e:
-            print(f"The json file is not valid for reading!\nMore detail: {e}")
+            UI.print_error(f"Corrupt JSON file: {e}")
             sys.exit(1)
 
         except Exception as e:
-            print(f"A rare exception ocurred!\nMore detail: {e}")
+            UI.print_error(f"Unexpected error: {e}")
             sys.exit(1)
 
     python_json_object = _load_python_object(file_path)
@@ -79,7 +158,7 @@ class Expense:
                 "available_ids"
             )
         except Exception as e:
-            print(f"A rare exception ocurred!\nMore detail: {e}")
+            UI.print_error(f"Error loading counter: {e}")
             sys.exit(1)
 
     @classmethod
@@ -94,11 +173,11 @@ class Expense:
                 json.dump(cls.python_json_object, f, indent=4)
 
         except IOError as e:
-            print(f"Something went wrong when writing and loading\nMore detail: {e}")
+            UI.print_error(f"Write error: {e}")
             sys.exit(1)
 
         except Exception as e:
-            print(f"A rare exception ocurred!\nMore detail: {e}")
+            UI.print_error(f"Unexpected error: {e}")
             sys.exit(1)
 
     @classmethod
@@ -109,11 +188,11 @@ class Expense:
                 json.dump(cls.python_json_object, f, indent=4)
 
         except IOError as e:
-            print(f"Something went wrong when writing and loading\nMore detail: {e}")
+            UI.print_error(f"Write error: {e}")
             sys.exit(1)
 
         except Exception as e:
-            print(f"A rare exception ocurred!\nMore detail: {e}")
+            UI.print_error(f"Unexpected error: {e}")
             sys.exit(1)
 
     def __init__(self) -> None:
@@ -145,8 +224,9 @@ class Expense:
         cls._final_writing()
         cls._write_counter()
 
-        print(
-            f"The {input_description} with {input_id} ID with amount of {input_amount} on {date} ADDED!"
+        UI.print_success(
+            f"Expense added: {Theme.BOLD}{input_description}{Theme.RESET} "
+            f"({Theme.GREEN}${input_amount}{Theme.RESET})"
         )
 
     @classmethod
@@ -155,56 +235,72 @@ class Expense:
         try:
             expense_item = cls.python_json_object["items"][id]
             del cls.python_json_object["items"][id]
-        except IndexError as e:
-            print(f"Incorrect ID!\nMore detail: {e}")
+        except (IndexError, KeyError) as e:
+            UI.print_error(f"ID {id} not found.")
             sys.exit(1)
 
-        cls.available_ids.append(id)
+        cls.available_ids.append(int(id))
         cls.available_ids.sort()
 
         cls._final_writing()
+        cls._write_counter() # Ensure counter/available_ids are saved too
 
         item_description = expense_item.get("description")
-        item_amount = expense_item.get("amount")
-        item_date = expense_item.get("date")
+        
+        UI.print_success(f"Deleted item {Theme.BOLD}#{id}{Theme.RESET} ({item_description})")
 
-        print(
-            f"The item {id} deleted.\nDescription: {item_description}\nAmount: {item_amount}\nDate: {item_date}"
-        )
 
     @classmethod
     def list_items(cls) -> None:
         """List all the items"""
         expense_items = cls.python_json_object.get("items")
-        for key, item in expense_items.items():
+        
+        if not expense_items:
+            UI.print_info("No expenses found.")
+            return
+
+        print("")
+        UI.table_row("ID", "DATE", "DESCRIPTION", "AMOUNT", header=True)
+        print(f" {Theme.OVERLAY}────── ┼ ────────────── ┼ ────────────────────────────── ┼ ────────────{Theme.RESET}")
+        
+        # Sort by ID for cleaner look
+        sorted_items = dict(sorted(expense_items.items(), key=lambda item: int(item[0])))
+
+        for key, item in sorted_items.items():
             description = item.get("description")
             amount = item.get("amount")
             date = item.get("date")
-
-            print("ID:", key)
-            print(description)
-            print(amount)
-            print(date, "\n")
-            print("-------------------------------------")
+            
+            UI.table_row(
+                f"#{key}", 
+                date, 
+                description, 
+                UI.format_currency(amount)
+            )
+        print("")
 
     @classmethod
     def summary_items(cls, month=0) -> None:
         """Summary of the total expenses"""
         expense_items = cls.python_json_object.get("items")
-
+        summary = 0
+        
         if month == 0:
-            summary = 0
             for key, item in expense_items.items():
                 summary = summary + item["amount"]
+            UI.header("Total Expenses")
         else:
-            summary = 0
             for key, item in expense_items.items():
                 date = item["date"]
                 extracted_month = re.findall(r"^\d+\-(\d+)\-\d+", date)[0]
                 if int(extracted_month) == int(month):
                     summary = summary + item["amount"]
+            
+            # Get month name
+            month_name = datetime(2000, int(month), 1).strftime('%B')
+            UI.header(f"Expenses for {month_name}")
 
-        print(f"{summary}t")
+        print(f" {Theme.TEXT}Total:{Theme.RESET} {Theme.GREEN}{Theme.BOLD}{UI.format_currency(summary)}{Theme.RESET}\n")
 
     @staticmethod
     def _update_date() -> str:
@@ -215,6 +311,9 @@ class Expense:
     def update_description(cls, id, new_description) -> None:
         """Update the description of an item"""
         try:
+            if id not in cls.python_json_object["items"]:
+                 raise IndexError("ID not found")
+
             new_date = cls._update_date()
 
             cls.python_json_object["items"][id]["description"] = new_description
@@ -222,28 +321,37 @@ class Expense:
 
             cls._final_writing()
 
-            print(f"The {id} ID updated to {new_description}.\nDate: {new_date}")
+            UI.print_success(f"Item {Theme.BOLD}#{id}{Theme.RESET} updated.")
+            print(f"   {Theme.OVERLAY}New Desc:{Theme.RESET} {new_description}")
 
-        except IndexError as e:
-            print(f"Incorrect ID!\nMore details: {e}")
+        except IndexError:
+            UI.print_error(f"ID {id} does not exist.")
             sys.exit(1)
 
     @classmethod
     def update_amount(cls, id, new_amount) -> None:
         """Update the amount of an item"""
         try:
+            if id not in cls.python_json_object["items"]:
+                 raise IndexError("ID not found")
+
             new_date = cls._update_date()
 
-            cls.python_json_object["items"][id]["amount"] = new_amount
+            cls.python_json_object["items"][id]["amount"] = float(new_amount)
             cls.python_json_object["items"][id]["date"] = new_date
 
             cls._final_writing()
 
-            print(f"The {id} ID updated to {new_amount}.\nDate: {new_date}")
+            UI.print_success(f"Item {Theme.BOLD}#{id}{Theme.RESET} updated.")
+            print(f"   {Theme.OVERLAY}New Amount:{Theme.RESET} {Theme.GREEN}{UI.format_currency(new_amount)}{Theme.RESET}")
 
-        except IndexError as e:
-            print(f"Incorrect ID!\nMore details: {e}")
+        except IndexError:
+            UI.print_error(f"ID {id} does not exist.")
             sys.exit(1)
+        except ValueError:
+             UI.print_error("Amount must be a number.")
+             sys.exit(1)
+
 
     @classmethod
     def export_csv(cls) -> None:
@@ -253,22 +361,28 @@ class Expense:
 
         file_name = "expense_items.csv"
 
-        with open(file_name, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+        try:
+            with open(file_name, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
 
-            writer.writeheader()
+                writer.writeheader()
 
-            for user_id, info in expense_items.items():
-                row = {"id": user_id}
-                row.update(info)
+                for user_id, info in expense_items.items():
+                    row = {"id": user_id}
+                    row.update(info)
 
-                writer.writerow(row)
+                    writer.writerow(row)
+            
+            UI.print_success(f"Exported to {Theme.BOLD}{file_name}{Theme.RESET}")
+            
+        except IOError as e:
+            UI.print_error(f"Could not write CSV: {e}")
 
 
 ################## Helper methods ######################
 
 
-def validate_amount(input_amount: str) -> int:
+def validate_amount(input_amount: str) -> float:
     """Validate the input amount"""
     try:
         input_amount = float(input_amount)
@@ -276,8 +390,11 @@ def validate_amount(input_amount: str) -> int:
             raise ValueError("The input amount cannot be ZERO or NEGATIVE!")
         else:
             return input_amount
+    except ValueError:
+        UI.print_error("Amount must be a positive number.")
+        sys.exit(1)
     except Exception as e:
-        print(f"An error ocurred!\nMore detail: {e}")
+        UI.print_error(f"An error occurred: {e}")
         sys.exit(1)
 
 
@@ -291,27 +408,28 @@ def validate_string(input_string: str) -> str:
         else:
             return input_string
     except Exception as e:
-        print(f"An error ocurred!\nMore detail: {e}")
+        UI.print_error(f"Validation Error: {e}")
         sys.exit(1)
 
 
 def validate_month_input(input_month: str) -> int:
-    """Validate the enterd input for the month. (Type and Value)"""
+    """Validate the entered input for the month. (Type and Value)"""
     try:
         input_month = int(input_month)
         if input_month <= 12 and input_month >= 1:
             return input_month
         else:
             raise ValueError("The input must be in the range between 1 and 12.")
-    except Exception as e:
-        print(f"An error ocurred!\nMore detail: {e}")
+    except Exception:
+        UI.print_error("Month must be an integer between 1 and 12.")
         sys.exit(1)
 
 
 def arguments() -> argparse.Namespace:
     """Argparse arguments"""
+    # Custom help formatter could be added here, but staying within constraints
     parser = argparse.ArgumentParser(
-        description="Manage the expenses via the Expense Tracker"
+        description="Manage your expenses."
     )
     subparser = parser.add_subparsers(dest="command")
 
@@ -320,7 +438,7 @@ def arguments() -> argparse.Namespace:
         "--description",
         required=True,
         help="The description of the item.",
-        metavar="<DESCRIPTION>",
+        metavar="DESC",
         type=validate_string,
         nargs=1,
     )
@@ -328,7 +446,7 @@ def arguments() -> argparse.Namespace:
         "--amount",
         required=True,
         help="Specify the amount of the expense",
-        metavar="<AMOUNT>",
+        metavar="AMT",
         type=validate_amount,
         nargs=1,
     )
@@ -342,7 +460,7 @@ def arguments() -> argparse.Namespace:
         "--month",
         required=False,
         help="Specify the number of the month.",
-        metavar="<MONTH NUMBER>",
+        metavar="NUM",
         type=validate_month_input,
         nargs=1,
     )
@@ -351,8 +469,8 @@ def arguments() -> argparse.Namespace:
     delete_parser.add_argument(
         "--id",
         required=True,
-        help="Specifiy the item id that you want to get deleted.",
-        metavar="<ID>",
+        help="Specify the item id that you want to get deleted.",
+        metavar="ID",
         nargs=1,
     )
 
@@ -361,17 +479,17 @@ def arguments() -> argparse.Namespace:
         "--id",
         required=True,
         help="Specify the item id that you want to get updated.",
-        metavar="<ID>",
+        metavar="ID",
         nargs=1,
     )
     update_parser.add_argument(
         "--description",
         help="The new description for the item.",
-        metavar="<DESCRIPTION>",
+        metavar="DESC",
         nargs=1,
     )
     update_parser.add_argument(
-        "--amount", help="The new amount for the item.", metavar="<AMOUNT>", nargs=1
+        "--amount", help="The new amount for the item.", metavar="AMT", nargs=1
     )
 
     export_parser = subparser.add_parser(
@@ -385,30 +503,45 @@ def arguments() -> argparse.Namespace:
 
 
 def main() -> None:
-    args = arguments()
-    expense_record = Expense()
+    try:
+        args = arguments()
+        
+        # If no arguments provided, show help
+        if not args.command:
+            print(f"\n {Theme.MAUVE}{Theme.BOLD}EXPENSE TRACKER CLI{Theme.RESET}")
+            print(f" {Theme.OVERLAY}Use 'python3 expense-tracker.py --help' for usage.{Theme.RESET}\n")
+            sys.exit(0)
 
-    if args.command == "add":
-        expense_record.add_expense_record(args.description[0], args.amount[0])
-    elif args.command == "delete":
-        expense_record.delete_item(args.id[0])
-    elif args.command == "list":
-        expense_record.list_items()
-    elif args.command == "summary":
-        if args.month:
-            expense_record.summary_items(args.month[0])
-        else:
-            expense_record.summary_items()
-    elif args.command == "update":
-        if args.description and args.amount:
-            expense_record.update_description(args.id[0], args.description[0])
-            expense_record.update_amount(args.id[0], args.amount[0])
-        elif args.amount:
-            expense_record.update_amount(args.id[0], args.amount[0])
-        elif args.description:
-            expense_record.update_description(args.id[0], args.description[0])
-    elif args.command == "export":
-        expense_record.export_csv()
+        expense_record = Expense()
+
+        if args.command == "add":
+            expense_record.add_expense_record(args.description[0], args.amount[0])
+        elif args.command == "delete":
+            expense_record.delete_item(args.id[0])
+        elif args.command == "list":
+            expense_record.list_items()
+        elif args.command == "summary":
+            if args.month:
+                expense_record.summary_items(args.month[0])
+            else:
+                expense_record.summary_items()
+        elif args.command == "update":
+            if args.description and args.amount:
+                expense_record.update_description(args.id[0], args.description[0])
+                expense_record.update_amount(args.id[0], args.amount[0])
+            elif args.amount:
+                expense_record.update_amount(args.id[0], args.amount[0])
+            elif args.description:
+                expense_record.update_description(args.id[0], args.description[0])
+        elif args.command == "export":
+            expense_record.export_csv()
+            
+    except KeyboardInterrupt:
+        print(f"\n{Theme.RED}Operation cancelled.{Theme.RESET}")
+        sys.exit(0)
+    except Exception as e:
+        UI.print_error(f"Critical failure: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
