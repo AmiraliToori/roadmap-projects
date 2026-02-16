@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import re
 
 from datetime import datetime
 
@@ -167,6 +168,24 @@ class Expense:
             print(date, "\n")
             print("-------------------------------------")
 
+    @classmethod
+    def summary_items(cls, month=0) -> None:
+        expense_items = cls.python_json_object.get("items")
+
+        if month == 0:
+            summary = 0
+            for key, item in expense_items.items():
+                summary = summary + item["amount"]
+        else:
+            summary = 0
+            for key, item in expense_items.items():
+                date = item["date"]
+                extracted_month = re.findall(r"^\d+\-(\d+)\-\d+", date)[0]
+                if int(extracted_month) == int(month):
+                    summary = summary + item["amount"]
+
+        print(f"{summary}t")
+
     def update_date(self) -> None:
         """Update date"""
         self.date = datetime.now().strftime("%Y-%m-%d")
@@ -297,6 +316,11 @@ def main() -> None:
         expense_record.delete_item(args.id[0])
     elif args.command == "list":
         expense_record.list_items()
+    elif args.command == "summary":
+        if args.month:
+            expense_record.summary_items(args.month[0])
+        else:
+            expense_record.summary_items()
 
 
 if __name__ == "__main__":
