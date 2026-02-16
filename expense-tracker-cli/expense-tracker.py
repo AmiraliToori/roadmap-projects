@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import re
 import os
+import csv
 
 from datetime import datetime
 
@@ -16,6 +17,7 @@ from datetime import datetime
 class Expense:
     @staticmethod
     def _handle_path() -> Path:
+        """Create and store the JSON in a specific path"""
         file_name = "expenseDB.json"
         home_path = os.getenv("HOME")
         config_path = ".config/expense-tracker/"
@@ -243,6 +245,25 @@ class Expense:
             print(f"Incorrect ID!\nMore details: {e}")
             sys.exit(1)
 
+    @classmethod
+    def export_csv(cls) -> None:
+        expense_items = cls.python_json_object.get("items")
+
+        fieldnames = ["id", "description", "amount", "date"]
+
+        file_name = "expense_items.csv"
+
+        with open(file_name, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+            writer.writeheader()
+
+            for user_id, info in expense_items.items():
+                row = {"id": user_id}
+                row.update(info)
+
+                writer.writerow(row)
+
 
 ################## Helper methods ######################
 
@@ -353,6 +374,10 @@ def arguments() -> argparse.Namespace:
         "--amount", help="The new amount for the item.", metavar="<AMOUNT>", nargs=1
     )
 
+    export_parser = subparser.add_parser(
+        "export", help="Export the expenses as a CSV file."
+    )
+
     return parser.parse_args()
 
 
@@ -382,6 +407,8 @@ def main() -> None:
             expense_record.update_amount(args.id[0], args.amount[0])
         elif args.description:
             expense_record.update_description(args.id[0], args.description[0])
+    elif args.command == "export":
+        expense_record.export_csv()
 
 
 if __name__ == "__main__":
