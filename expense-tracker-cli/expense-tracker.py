@@ -138,7 +138,7 @@ class Expense:
             expense_item = cls.python_json_object["items"][id]
             del cls.python_json_object["items"][id]
         except IndexError as e:
-            print(f"Out of range ID!\nMore detail: {e}")
+            print(f"Incorrect ID!\nMore detail: {e}")
             sys.exit(1)
 
         cls.available_ids.append(id)
@@ -156,6 +156,7 @@ class Expense:
 
     @classmethod
     def list_items(cls) -> None:
+        """List all the items"""
         expense_items = cls.python_json_object.get("items")
         for key, item in expense_items.items():
             description = item.get("description")
@@ -170,6 +171,7 @@ class Expense:
 
     @classmethod
     def summary_items(cls, month=0) -> None:
+        """Summary of the total expenses"""
         expense_items = cls.python_json_object.get("items")
 
         if month == 0:
@@ -186,9 +188,44 @@ class Expense:
 
         print(f"{summary}t")
 
-    def update_date(self) -> None:
+    @staticmethod
+    def _update_date() -> str:
         """Update date"""
-        self.date = datetime.now().strftime("%Y-%m-%d")
+        return datetime.now().strftime("%Y-%m-%d")
+
+    @classmethod
+    def update_description(cls, id, new_description) -> None:
+        """Update the description of an item"""
+        try:
+            new_date = cls._update_date()
+
+            cls.python_json_object["items"][id]["description"] = new_description
+            cls.python_json_object["items"][id]["date"] = new_date
+
+            cls._final_writing()
+
+            print(f"The {id} ID updated to {new_description}.\nDate: {new_date}")
+
+        except IndexError as e:
+            print(f"Incorrect ID!\nMore details: {e}")
+            sys.exit(1)
+
+    @classmethod
+    def update_amount(cls, id, new_amount) -> None:
+        """Update the amount of an item"""
+        try:
+            new_date = cls._update_date()
+
+            cls.python_json_object["items"][id]["amount"] = new_amount
+            cls.python_json_object["items"][id]["date"] = new_date
+
+            cls._final_writing()
+
+            print(f"The {id} ID updated to {new_amount}.\nDate: {new_date}")
+
+        except IndexError as e:
+            print(f"Incorrect ID!\nMore details: {e}")
+            sys.exit(1)
 
 
 ################## Helper methods ######################
@@ -321,6 +358,14 @@ def main() -> None:
             expense_record.summary_items(args.month[0])
         else:
             expense_record.summary_items()
+    elif args.command == "update":
+        if args.description and args.amount:
+            expense_record.update_description(args.id[0], args.description[0])
+            expense_record.update_amount(args.id[0], args.amount[0])
+        elif args.amount:
+            expense_record.update_amount(args.id[0], args.amount[0])
+        elif args.description:
+            expense_record.update_description(args.id[0], args.description[0])
 
 
 if __name__ == "__main__":
