@@ -103,11 +103,11 @@ class Expense:
     @classmethod
     def add_expense_record(cls, description: str, amount: float) -> None:
         """Add new item expense record"""
-        if Expense.available_ids:
-            input_id = Expense.available_ids.pop(0)
+        if cls.available_ids:
+            input_id = cls.available_ids.pop(0)
         else:
-            input_id = Expense.id_counter
-            Expense.id_counter = Expense.id_counter + 1
+            input_id = cls.id_counter
+            cls.id_counter = cls.id_counter + 1
 
         input_description = description
         input_amount = amount
@@ -123,18 +123,19 @@ class Expense:
             }
         )
 
-        Expense._final_writing()
-        Expense._write_counter()
+        cls._final_writing()
+        cls._write_counter()
 
         print(
             f"The {input_description} with {input_id} ID with amount of {input_amount} on {date} ADDED!"
         )
 
-    def delete(self, id: int) -> None:
+    @classmethod
+    def delete_item(cls, id: int) -> None:
         """Delete a ID."""
         try:
-            expense_item = Expense.python_json_object["items"][id]
-            del Expense.python_json_object["items"][id]
+            expense_item = cls.python_json_object["items"][id]
+            del cls.python_json_object["items"][id]
         except IndexError as e:
             print(f"Out of range ID!\nMore detail: {e}")
             sys.exit(1)
@@ -151,6 +152,9 @@ class Expense:
         print(
             f"The item {id} deleted.\nDescription: {item_description}\nAmount: {item_amount}\nDate: {item_date}"
         )
+
+    def list_items() -> None:
+        pass
 
     def update_date(self) -> None:
         """Update date"""
@@ -279,7 +283,9 @@ def main() -> None:
     if args.command == "add":
         expense_record.add_expense_record(args.description[0], args.amount[0])
     elif args.command == "delete":
-        expense_record.delete(args.id[0])
+        expense_record.delete_item(args.id[0])
+    elif args.command == "list":
+        pass
 
 
 if __name__ == "__main__":
