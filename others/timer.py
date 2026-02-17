@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+import os
+from time import sleep
+
+
+def clear_terminal() -> None:
+    """Helper method to clear the terminal environment"""
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+class Timer:
+    def __init__(self) -> None:
+        pass
+
+    @staticmethod
+    def count_the_timer(time: int, rep: int = 1) -> None:
+        """Count and start the timer."""
+        print("Starting...")
+        clear_terminal()
+        for rep_count in range(1, rep + 1):
+            for count in range(1, time + 1):
+                print(rep_count, count)
+                sleep(1)
+                clear_terminal()
+        print("Counter Ended.")
+        clear_terminal()
+        sys.exit(0)
+
+
+def validate_time_input(input_number: str) -> int:
+    """Validate the input value of the --rep and --time argument"""
+    try:
+        number = int(input_number)
+        if number <= 0:
+            raise ValueError("The input value cannot be 0 or NEGATIVE!")
+        else:
+            return number
+    except TypeError:
+        raise TypeError("The input value must be a integer number!")
+    except Exception:
+        raise Exception("A rare exception occurred.")
+
+
+def arguments() -> argparse.Namespace:
+    """Arguments function for the argparse module."""
+    parser = argparse.ArgumentParser(description="A simple and plain Python CLI Timer.")
+
+    subparser = parser.add_subparsers(dest="command", help="Available commands")
+
+    count_parser = subparser.add_parser(
+        "count", help="Count a specific amount of time."
+    )
+
+    count_parser.add_argument(
+        "--time",
+        help="The amount of seconds that you want to count.",
+        type=validate_time_input,
+        metavar="<TIME>",
+        required=True,
+        nargs=1,
+    )
+
+    count_parser.add_argument(
+        "--rep",
+        help="The number of sets you want to do it.",
+        type=validate_time_input,
+        metavar="<REP>",
+        required=False,
+        nargs=1,
+    )
+
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = arguments()
+
+    timer = Timer()
+
+    if args.command == "count":
+        if args.time and args.rep:
+            timer.count_the_timer(args.time[0], args.rep[0])
+        else:
+            timer.count_the_timer(args.time[0])
+
+
+if __name__ == "__main__":
+    main()
