@@ -16,17 +16,35 @@ class Timer:
         pass
 
     @staticmethod
-    def count_the_timer(time: int, rep: int = 1) -> None:
-        """Count and start the timer."""
-        print("Starting...")
+    def rest(rest_time: int) -> None:
+        """Rest between the sets."""
         clear_terminal()
+        print("Resting...")
+        sleep(rest_time)
+        clear_terminal()
+
+    def count_the_timer(self, time: int, rep: int = 1, rest_time: int = 0) -> None:
+        """Count and start the timer."""
+
+        print("Starting the timer...")
+        sleep(1)
+
+        clear_terminal()
+
         for rep_count in range(1, rep + 1):
             for count in range(1, time + 1):
                 print(rep_count, count)
                 sleep(1)
                 clear_terminal()
-        print("Counter Ended.")
+
+            if rep_count != rep and rest_time > 0:
+                self.rest(rest_time)
+
+        print("Timer Ended.")
+        sleep(1)
+
         clear_terminal()
+
         sys.exit(0)
 
 
@@ -72,6 +90,15 @@ def arguments() -> argparse.Namespace:
         nargs=1,
     )
 
+    count_parser.add_argument(
+        "--rest",
+        help="Rest time between each set.",
+        type=validate_time_input,
+        metavar="<REST>",
+        required=False,
+        nargs=1,
+    )
+
     return parser.parse_args()
 
 
@@ -81,7 +108,9 @@ def main() -> None:
     timer = Timer()
 
     if args.command == "count":
-        if args.time and args.rep:
+        if args.time and args.rep and args.rest:
+            timer.count_the_timer(args.time[0], args.rep[0], args.rest[0])
+        elif args.time and args.rep:
             timer.count_the_timer(args.time[0], args.rep[0])
         else:
             timer.count_the_timer(args.time[0])
