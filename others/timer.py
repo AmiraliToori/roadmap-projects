@@ -12,9 +12,6 @@ def clear_terminal() -> None:
 
 
 class Timer:
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def rest(rest_time: int) -> None:
         """Rest between the sets."""
@@ -23,22 +20,27 @@ class Timer:
         sleep(rest_time)
         clear_terminal()
 
-    def count_the_timer(self, time: int, rep: int = 1, rest_time: int = 0) -> None:
+    def count_the_timer(
+        self, time: int, rep: int = 1, rest_time: int | None = None
+    ) -> None:
         """Count and start the timer."""
+        self.time = time
+        self.rep = rep
+        self.rest_time = rest_time
 
         print("Starting the timer...")
         sleep(1)
 
         clear_terminal()
 
-        for rep_count in range(1, rep + 1):
-            for count in range(1, time + 1):
+        for rep_count in range(1, self.rep + 1):
+            for count in range(1, self.time + 1):
                 print(rep_count, count)
                 sleep(1)
                 clear_terminal()
 
-            if rep_count != rep and rest_time > 0:
-                self.rest(rest_time)
+            if rep_count != self.rep and isinstance(self.rest_time, int):
+                self.rest(self.rest_time)
 
         print("Timer Ended.")
         sleep(1)
@@ -107,13 +109,16 @@ def main() -> None:
 
     timer = Timer()
 
-    if args.command == "count":
-        if args.time and args.rep and args.rest:
-            timer.count_the_timer(args.time[0], args.rep[0], args.rest[0])
-        elif args.time and args.rep:
-            timer.count_the_timer(args.time[0], args.rep[0])
-        else:
-            timer.count_the_timer(args.time[0])
+    try:
+        if args.command == "count":
+            if args.time and args.rep and args.rest:
+                timer.count_the_timer(args.time[0], args.rep[0], args.rest[0])
+            elif args.time and args.rep:
+                timer.count_the_timer(args.time[0], args.rep[0])
+            else:
+                timer.count_the_timer(args.time[0])
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
 
 
 if __name__ == "__main__":
