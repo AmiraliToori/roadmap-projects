@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from sre_parse import CATEGORIES
 import sys
 import re
 import os
@@ -452,7 +453,7 @@ class Expense:
             UI.print_error(f"Could not write CSV: {e}")
 
 
-################## Helper methods ######################
+################## Helper methods & Classes ######################
 
 
 def validate_amount(input_amount: str) -> float:
@@ -498,8 +499,7 @@ def validate_month_input(input_month: str) -> int:
         sys.exit(1)
 
 
-def display_categories() -> None:
-    """Display a list of categories"""
+class CategoryList:
     list_of_categories = [
         "General",
         "Food",
@@ -520,9 +520,12 @@ def display_categories() -> None:
         "Culture & Art",
     ]
 
-    print("List of the available category options:")
-    for category in list_of_categories:
-        print(f"\t{category}")
+    @classmethod
+    def display_categories(cls) -> None:
+        """Display a list of categories"""
+        print("List of the available category options:")
+        for category in cls.list_of_categories:
+            print(f"\t{category}")
 
 
 def arguments() -> argparse.Namespace:
@@ -553,25 +556,7 @@ def arguments() -> argparse.Namespace:
         required=False,
         help="Specify the category of the items.",
         metavar="CAT",
-        choices=[
-            "General",
-            "Food",
-            "Daily",
-            "Cafe and Restaurant",
-            "Beauty & Health",
-            "Bills & Charging",
-            "Clothes",
-            "Travel & Transportation",
-            "House",
-            "Entertainment",
-            "Savings",
-            "Sports",
-            "Gifting",
-            "Other",
-            "Money Transfer",
-            "Loan Installments",
-            "Culture & Art",
-        ],
+        choices=CategoryList.list_of_categories,
         nargs=1,
         default=["General"],
     )
@@ -608,25 +593,7 @@ def arguments() -> argparse.Namespace:
         required=False,
         help="Specify the category of item.",
         metavar="CAT",
-        choices=[
-            "General",
-            "Food",
-            "Daily",
-            "Cafe and Restaurant",
-            "Beauty & Health",
-            "Bills & Charging",
-            "Clothes",
-            "Travel & Transportation",
-            "House",
-            "Entertainment",
-            "Savings",
-            "Sports",
-            "Gifting",
-            "Other",
-            "Money Transfer",
-            "Loan Installments",
-            "Culture & Art",
-        ],
+        choices=CategoryList.list_of_categories,
         nargs=1,
     )
 
@@ -661,25 +628,7 @@ def arguments() -> argparse.Namespace:
         required=False,
         help="Specify the category of the items.",
         metavar="CAT",
-        choices=[
-            "General",
-            "Food",
-            "Daily",
-            "Cafe and Restaurant",
-            "Beauty & Health",
-            "Bills & Charging",
-            "Clothes",
-            "Travel & Transportation",
-            "House",
-            "Entertainment",
-            "Savings",
-            "Sports",
-            "Gifting",
-            "Other",
-            "Money Transfer",
-            "Loan Installments",
-            "Culture & Art",
-        ],
+        choices=CategoryList.list_of_categories,
         nargs=1,
     )
 
@@ -717,7 +666,7 @@ def main() -> None:
 
         elif args.command == "list":
             if args.list_categories:
-                display_categories()
+                CategoryList.display_categories()
             else:
                 if args.category:
                     expense_record.list_items(args.category[0])
