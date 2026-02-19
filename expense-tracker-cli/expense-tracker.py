@@ -3,7 +3,6 @@
 import argparse
 import json
 from pathlib import Path
-from sre_parse import CATEGORIES
 import sys
 import re
 import os
@@ -579,7 +578,7 @@ def arguments() -> argparse.Namespace:
     summary_parser = subparser.add_parser(
         "summary", help="Get a summary of all expenses or a specific date."
     )
-    summary_parser.add_mutually_exclusive_group(required=False)
+    summary_parser = summary_parser.add_mutually_exclusive_group(required=False)
     summary_parser.add_argument(
         "--month",
         required=False,
