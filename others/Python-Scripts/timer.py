@@ -12,35 +12,64 @@ def clear_terminal() -> None:
 
 
 class Timer:
+    def __init__(
+        self,
+        second: int = 0,
+        minute: int = 0,
+        hour: int = 0,
+        rep: int = 1,
+        rest_time: int | None = None,
+    ) -> None:
+        self.second = second
+        self.minute = minute
+        self.hour = hour
+        self.rep = rep
+        self.rest_time = rest_time
+
     @staticmethod
-    def rest(rest_time: int) -> None:
+    def _rest(rest_time: int) -> None:
         """Rest between the sets."""
         clear_terminal()
         print("Resting...")
         sleep(rest_time)
         clear_terminal()
 
-    def count_the_timer(
-        self, time: int, rep: int = 1, rest_time: int | None = None
-    ) -> None:
+    def count_the_timer(self) -> None:
         """Count and start the timer."""
-        self.time = time
-        self.rep = rep
-        self.rest_time = rest_time
+        second = self.second
+        minute = self.minute
+        hour = self.hour
+        rep = self.rep
+        rest_time = self.rest_time
 
         print("Starting the timer...")
         sleep(1)
 
         clear_terminal()
 
-        for rep_count in range(1, self.rep + 1):
-            for count in range(1, self.time + 1):
-                print(rep_count, count)
+        for rep_count in range(1, rep + 1):
+            while (hour > 0) or (minute > 0) or (second > 0):
+                print(f"Set: {rep_count}", hour, minute, second)
+
                 sleep(1)
+
+                if second >= 1:
+                    second = second - 1
+                elif second == 0 and minute >= 1:
+                    minute = minute - 1
+                    second = 59
+                elif (second == 0 and minute == 0) and hour >= 1:
+                    hour = hour - 1
+                    minute = 59
+                    second = 59
                 clear_terminal()
 
-            if rep_count != self.rep and isinstance(self.rest_time, int):
-                self.rest(self.rest_time)
+            second = self.second
+            minute = self.minute
+            hour = self.hour
+
+            if rep_count != rep and isinstance(rest_time, int):
+                self._rest(rest_time)
 
         print("Timer Ended.")
         sleep(1)
@@ -50,12 +79,54 @@ class Timer:
         sys.exit(0)
 
 
-def validate_time_input(input_number: str) -> int:
-    """Validate the input value of the --rep and --time argument"""
+def validate_second_input(input_number: str) -> int:
+    """Validate the input value of seconds"""
+    try:
+        number = int(input_number)
+        if number < 0 or number > 60:
+            raise ValueError("The seconds input must be between 0 and 60")
+        else:
+            return number
+    except TypeError:
+        raise TypeError("The input value must be a integer number!")
+    except Exception:
+        raise Exception("A rare exception occurred.")
+
+
+def validate_minute_input(input_number: str) -> int:
+    """Validate the input value of minutes"""
+    try:
+        number = int(input_number)
+        if number < 0 or number > 60:
+            raise ValueError("The minutes input must be between 0 and 60")
+        else:
+            return number
+    except TypeError:
+        raise TypeError("The input value must be a integer number!")
+    except Exception:
+        raise Exception("A rare exception occurred.")
+
+
+def validate_hour_input(input_number: str) -> int:
+    """Validate the input value of hours"""
+    try:
+        number = int(input_number)
+        if number < 0 or number >= 24:
+            raise ValueError("The hour input must be between 0 and 24")
+        else:
+            return number
+    except TypeError:
+        raise TypeError("The input value must be a integer number!")
+    except Exception:
+        raise Exception("A rare exception occurred.")
+
+
+def validate_rep_input(input_number: str) -> int:
+    """Validate the input value of reps"""
     try:
         number = int(input_number)
         if number <= 0:
-            raise ValueError("The input value cannot be 0 or NEGATIVE!")
+            raise ValueError("The set value cannot be between 0 or NEGATIVE!")
         else:
             return number
     except TypeError:
@@ -75,30 +146,50 @@ def arguments() -> argparse.Namespace:
     )
 
     count_parser.add_argument(
-        "--time",
+        "--second",
         help="The amount of seconds that you want to count.",
-        type=validate_time_input,
-        metavar="<TIME>",
-        required=True,
+        type=validate_second_input,
+        metavar="<SEC>",
         nargs=1,
+        default=[0],
+    )
+
+    count_parser.add_argument(
+        "--minute",
+        help="The amount of minutes that you want to count.",
+        type=validate_minute_input,
+        metavar="<MIN>",
+        nargs=1,
+        default=[0],
+    )
+
+    count_parser.add_argument(
+        "--hour",
+        help="The amount of hours that you want to count.",
+        type=validate_hour_input,
+        metavar="<HR>",
+        nargs=1,
+        default=[0],
     )
 
     count_parser.add_argument(
         "--rep",
         help="The number of sets you want to do it.",
-        type=validate_time_input,
+        type=validate_rep_input,
         metavar="<REP>",
         required=False,
         nargs=1,
+        default=[1],
     )
 
     count_parser.add_argument(
         "--rest",
         help="Rest time between each set.",
-        type=validate_time_input,
+        type=validate_second_input,
         metavar="<REST>",
         required=False,
         nargs=1,
+        default=[0],
     )
 
     return parser.parse_args()
@@ -107,16 +198,14 @@ def arguments() -> argparse.Namespace:
 def main() -> None:
     args = arguments()
 
-    timer = Timer()
+    timer = Timer(
+        args.second[0], args.minute[0], args.hour[0], args.rep[0], args.rest[0]
+    )
 
     try:
         if args.command == "count":
-            if args.time and args.rep and args.rest:
-                timer.count_the_timer(args.time[0], args.rep[0], args.rest[0])
-            elif args.time and args.rep:
-                timer.count_the_timer(args.time[0], args.rep[0])
-            else:
-                timer.count_the_timer(args.time[0])
+            if args.second or args.minute or args.second:
+                timer.count_the_timer()
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
 
