@@ -299,25 +299,50 @@ class Expense:
         print("")
 
     @classmethod
-    def summary_items(cls, month=0) -> None:
-        """Summary of the total expenses"""
+    def summary_of_all_items(cls) -> None:
+        """Get the summary of all items"""
         expense_items = cls.python_json_object.get("items")
         summary = 0
 
-        if month == 0:
-            for key, item in expense_items.items():
-                summary = summary + item["amount"]
-            UI.header("Total Expenses")
-        else:
-            for key, item in expense_items.items():
-                date = item["date"]
-                extracted_month = re.findall(r"^\d+\-(\d+)\-\d+", date)[0]
-                if int(extracted_month) == int(month):
-                    summary = summary + item["amount"]
+        for key, item in expense_items.items():
+            summary = summary + item["amount"]
+        UI.header("Total Expenses")
 
-            # Get month name
+        print(
+            f" {Theme.TEXT}Total:{Theme.RESET} {Theme.GREEN}{Theme.BOLD}{UI.format_currency(summary)}{Theme.RESET}\n"
+        )
+
+    @classmethod
+    def summary_items_by_month(cls, month: int) -> None:
+        """Summary of items by month"""
+        expense_items = cls.python_json_object.get("items")
+        summary = 0
+
+        for key, item in expense_items.items():
+            date = item["date"]
+            extracted_month = re.findall(r"^\d+\-(\d+)\-\d+", date)[0]
+            if int(extracted_month) == int(month):
+                summary = summary + item["amount"]
+
             month_name = datetime(2000, int(month), 1).strftime("%B")
-            UI.header(f"Expenses for {month_name}")
+        UI.header(f"Expenses for {month_name}")
+
+        print(
+            f" {Theme.TEXT}Total:{Theme.RESET} {Theme.GREEN}{Theme.BOLD}{UI.format_currency(summary)}{Theme.RESET}\n"
+        )
+
+    @classmethod
+    def summary_items_by_category(cls, input_category: str) -> None:
+        """Summary of items by category"""
+        expense_items = cls.python_json_object.get("items")
+        summary = 0
+
+        for key, item in expense_items.items():
+            item_category = item.get("category", "General")
+            if input_category == item_category:
+                summary = summary + item["amount"]
+
+        UI.header(f"Expenses for {input_category}")
 
         print(
             f" {Theme.TEXT}Total:{Theme.RESET} {Theme.GREEN}{Theme.BOLD}{UI.format_currency(summary)}{Theme.RESET}\n"
@@ -569,12 +594,39 @@ def arguments() -> argparse.Namespace:
     summary_parser = subparser.add_parser(
         "summary", help="Get a summary of all expenses or a specific date."
     )
+    summary_parser.add_mutually_exclusive_group(required=False)
     summary_parser.add_argument(
         "--month",
         required=False,
         help="Specify the number of the month.",
         metavar="NUM",
         type=validate_month_input,
+        nargs=1,
+    )
+    summary_parser.add_argument(
+        "--category",
+        required=False,
+        help="Specify the category of item.",
+        metavar="CAT",
+        choices=[
+            "General",
+            "Food",
+            "Daily",
+            "Cafe and Restaurant",
+            "Beauty & Health",
+            "Bills & Charging",
+            "Clothes",
+            "Travel & Transportation",
+            "House",
+            "Entertainment",
+            "Savings",
+            "Sports",
+            "Gifting",
+            "Other",
+            "Money Transfer",
+            "Loan Installments",
+            "Culture & Art",
+        ],
         nargs=1,
     )
 
@@ -674,9 +726,11 @@ def main() -> None:
 
         elif args.command == "summary":
             if args.month:
-                expense_record.summary_items(args.month[0])
+                expense_record.summary_items_by_month(args.month[0])
+            elif args.category:
+                expense_record.summary_items_by_category(args.category[0])
             else:
-                expense_record.summary_items()
+                expense_record.summary_of_all_items()
 
         elif args.command == "update":
             if args.description and args.amount and args.category:
