@@ -265,8 +265,8 @@ class Expense:
         )
 
     @classmethod
-    def list_items(cls) -> None:
-        """List all the items"""
+    def list_items(cls, specific_category: str = "all") -> None:
+        """List all or a specific category of the item expenses."""
         expense_items = cls.python_json_object.get("items")
 
         if not expense_items:
@@ -289,6 +289,9 @@ class Expense:
             amount = item.get("amount")
             date = item.get("date")
             category = item.get("category", "General")
+
+            if category != specific_category and specific_category != "all":
+                continue
 
             UI.table_row(
                 f"#{key}", date, description, category, UI.format_currency(amount)
@@ -555,6 +558,13 @@ def arguments() -> argparse.Namespace:
         action="store_true",
         required=False,
     )
+    list_parser.add_argument(
+        "--category",
+        help="Filter the expenses by specific type of category.",
+        nargs=1,
+        required=False,
+        metavar="CAT",
+    )
 
     summary_parser = subparser.add_parser(
         "summary", help="Get a summary of all expenses or a specific date."
@@ -649,32 +659,44 @@ def main() -> None:
             expense_record.add_expense_record(
                 args.description[0], args.amount[0], args.category[0]
             )
+
         elif args.command == "delete":
             expense_record.delete_item(args.id[0])
+
         elif args.command == "list":
             if args.list_categories:
                 display_categories()
             else:
-                expense_record.list_items()
+                if args.category:
+                    expense_record.list_items(args.category[0])
+                else:
+                    expense_record.list_items()
+
         elif args.command == "summary":
             if args.month:
                 expense_record.summary_items(args.month[0])
             else:
                 expense_record.summary_items()
+
         elif args.command == "update":
             if args.description and args.amount and args.category:
                 expense_record.update_description(args.id[0], args.description[0])
                 expense_record.update_amount(args.id[0], args.amount[0])
                 expense_record.update_category(args.id[0], args.category[0])
-            if args.description and args.amount:
+
+            elif args.description and args.amount:
                 expense_record.update_description(args.id[0], args.description[0])
                 expense_record.update_amount(args.id[0], args.amount[0])
+
             elif args.amount:
                 expense_record.update_amount(args.id[0], args.amount[0])
+
             elif args.description:
                 expense_record.update_description(args.id[0], args.description[0])
+
             elif args.category:
                 expense_record.update_category(args.id[0], args.category[0])
+
         elif args.command == "export":
             expense_record.export_csv()
 
