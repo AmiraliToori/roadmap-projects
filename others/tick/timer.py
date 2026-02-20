@@ -27,6 +27,24 @@ class Timer:
         self.rest_time = rest_time
 
     @staticmethod
+    def stopwatch() -> None:
+        """Stopwatch mode"""
+        second = 0
+        minute = 0
+
+        while True:
+            print(minute, second)
+
+            sleep(1)
+
+            second = second + 1
+            if second == 60:
+                minute = minute + 1
+                second = 0
+
+            clear_terminal()
+
+    @staticmethod
     def _rest(rest_time: int) -> None:
         """Rest between the sets."""
         clear_terminal()
@@ -34,7 +52,7 @@ class Timer:
         sleep(rest_time)
         clear_terminal()
 
-    def count_the_timer(self) -> None:
+    def countdown(self) -> None:
         """Count and start the timer."""
         second = self.second
         minute = self.minute
@@ -141,11 +159,9 @@ def arguments() -> argparse.Namespace:
 
     subparser = parser.add_subparsers(dest="command", help="Available commands")
 
-    count_parser = subparser.add_parser(
-        "count", help="Count a specific amount of time."
-    )
+    countdown_parser = subparser.add_parser("countdown", help="Countdown Mode")
 
-    count_parser.add_argument(
+    countdown_parser.add_argument(
         "--second",
         help="The amount of seconds that you want to count.",
         type=validate_second_input,
@@ -154,7 +170,7 @@ def arguments() -> argparse.Namespace:
         default=[0],
     )
 
-    count_parser.add_argument(
+    countdown_parser.add_argument(
         "--minute",
         help="The amount of minutes that you want to count.",
         type=validate_minute_input,
@@ -163,7 +179,7 @@ def arguments() -> argparse.Namespace:
         default=[0],
     )
 
-    count_parser.add_argument(
+    countdown_parser.add_argument(
         "--hour",
         help="The amount of hours that you want to count.",
         type=validate_hour_input,
@@ -172,7 +188,7 @@ def arguments() -> argparse.Namespace:
         default=[0],
     )
 
-    count_parser.add_argument(
+    countdown_parser.add_argument(
         "--rep",
         help="The number of sets you want to do it.",
         type=validate_rep_input,
@@ -182,7 +198,7 @@ def arguments() -> argparse.Namespace:
         default=[1],
     )
 
-    count_parser.add_argument(
+    countdown_parser.add_argument(
         "--rest",
         help="Rest time between each set.",
         type=validate_second_input,
@@ -192,20 +208,25 @@ def arguments() -> argparse.Namespace:
         default=[0],
     )
 
+    stopwatch_parser = subparser.add_parser("stopwatch", description="Stopwatch Mode")
+
     return parser.parse_args()
 
 
 def main() -> None:
     args = arguments()
 
-    timer = Timer(
-        args.second[0], args.minute[0], args.hour[0], args.rep[0], args.rest[0]
-    )
+    timer = Timer()
 
     try:
-        if args.command == "count":
+        if args.command == "countdown":
+            timer = Timer(
+                args.second[0], args.minute[0], args.hour[0], args.rep[0], args.rest[0]
+            )
             if args.second or args.minute or args.second:
-                timer.count_the_timer()
+                timer.countdown()
+        elif args.command == "stopwatch":
+            timer.stopwatch()
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
 
