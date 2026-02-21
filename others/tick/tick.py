@@ -34,7 +34,7 @@ class Timer:
     ) -> None:
         """Counting down a specific desire amount of time"""
         while (hour > 0) or (minute > 0) or (second > 0):
-            print(hour, minute, second)
+            print(f"\r{hour}:{minute}:{second:<40}", end="", flush=True)
 
             sleep(1)
 
@@ -47,11 +47,8 @@ class Timer:
                 hour = hour - 1
                 minute = 59
                 second = 59
-            clear_terminal()
 
-        second = self.second
-        minute = self.minute
-        hour = self.hour
+        clear_terminal()
 
     def _rest(self, second: int = 0, minute: int = 0, hour: int = 0) -> None:
         """Rest between the sets."""
@@ -60,11 +57,20 @@ class Timer:
 
     def pomodoro(self) -> None:
         """Pomodoro mode"""
-        while True:
-            print("Starting Pomodoro mode...")
-            sleep(1)
+        pomodoro_count = 0
 
+        print("Starting Pomodoro mode...")
+        sleep(1)
+        clear_terminal()
+
+        while True:
             self._count_timer(minute=25)
+            pomodoro_count = pomodoro_count + 1
+            if pomodoro_count == 4:
+                self._rest(minute=30)
+                pomodoro_count = 1
+            else:
+                self._rest(minute=5)
 
     @staticmethod
     def stopwatch() -> None:
@@ -217,6 +223,8 @@ def arguments() -> argparse.Namespace:
 
     stopwatch_parser = subparser.add_parser("stopwatch", description="Stopwatch Mode")
 
+    pomodoro_parser = subparser.add_parser("pomodoro", description="Pomodoro Mode")
+
     return parser.parse_args()
 
 
@@ -234,6 +242,8 @@ def main() -> None:
                 timer.countdown()
         elif args.command == "stopwatch":
             timer.stopwatch()
+        elif args.command == "pomodoro":
+            timer.pomodoro()
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
 
