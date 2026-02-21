@@ -17,14 +17,54 @@ class Timer:
         second: int = 0,
         minute: int = 0,
         hour: int = 0,
-        rep: int = 1,
+        set_number: int = 1,
         rest_time: int | None = None,
     ) -> None:
         self.second = second
         self.minute = minute
         self.hour = hour
-        self.rep = rep
+        self.set_number = set_number
         self.rest_time = rest_time
+
+    def _count_timer(
+        self,
+        second: int = 0,
+        minute: int = 0,
+        hour: int = 0,
+    ) -> None:
+        """Counting down a specific desire amount of time"""
+        while (hour > 0) or (minute > 0) or (second > 0):
+            print(hour, minute, second)
+
+            sleep(1)
+
+            if second >= 1:
+                second = second - 1
+            elif second == 0 and minute >= 1:
+                minute = minute - 1
+                second = 59
+            elif (second == 0 and minute == 0) and hour >= 1:
+                hour = hour - 1
+                minute = 59
+                second = 59
+            clear_terminal()
+
+        second = self.second
+        minute = self.minute
+        hour = self.hour
+
+    def _rest(self, second: int = 0, minute: int = 0, hour: int = 0) -> None:
+        """Rest between the sets."""
+        print("Resting...")
+        self._count_timer(second, minute, hour)
+
+    def pomodoro(self) -> None:
+        """Pomodoro mode"""
+        while True:
+            print("Starting Pomodoro mode...")
+            sleep(1)
+
+            self._count_timer(minute=25)
 
     @staticmethod
     def stopwatch() -> None:
@@ -44,51 +84,18 @@ class Timer:
 
             clear_terminal()
 
-    @staticmethod
-    def _rest(rest_time: int) -> None:
-        """Rest between the sets."""
-        clear_terminal()
-        print("Resting...")
-        sleep(rest_time)
-        clear_terminal()
-
     def countdown(self) -> None:
-        """Count and start the timer."""
-        second = self.second
-        minute = self.minute
-        hour = self.hour
-        rep = self.rep
-        rest_time = self.rest_time
+        """Countdown mode"""
 
         print("Starting the timer...")
         sleep(1)
 
         clear_terminal()
+        for set_count in range(1, self.set_number + 1):
+            self._count_timer(self.second, self.minute, self.hour)
 
-        for rep_count in range(1, rep + 1):
-            while (hour > 0) or (minute > 0) or (second > 0):
-                print(f"Set: {rep_count}", hour, minute, second)
-
-                sleep(1)
-
-                if second >= 1:
-                    second = second - 1
-                elif second == 0 and minute >= 1:
-                    minute = minute - 1
-                    second = 59
-                elif (second == 0 and minute == 0) and hour >= 1:
-                    hour = hour - 1
-                    minute = 59
-                    second = 59
-                clear_terminal()
-
-            second = self.second
-            minute = self.minute
-            hour = self.hour
-
-            if rep_count != rep and isinstance(rest_time, int):
-                self._rest(rest_time)
-
+            if set_count < (self.set_number) and isinstance(self.rest_time, int):
+                self._rest(self.rest_time)
         print("Timer Ended.")
         sleep(1)
 
