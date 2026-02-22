@@ -59,16 +59,16 @@ class Timer:
         """Pomodoro mode"""
         pomodoro_count = 0
 
-        print("Starting Pomodoro mode...")
+        print("Starting Pomodoro mode...", end="")
         sleep(1)
         clear_terminal()
 
         while True:
+            print(f"\rPomodoro round {pomodoro_count + 1:<20}", end="\n")
             self._count_timer(minute=25)
             pomodoro_count = pomodoro_count + 1
-            if pomodoro_count == 4:
+            if pomodoro_count % 4 == 0:
                 self._rest(minute=30)
-                pomodoro_count = 1
             else:
                 self._rest(minute=5)
 
@@ -238,7 +238,7 @@ def main() -> None:
             timer = Timer(
                 args.second[0], args.minute[0], args.hour[0], args.rep[0], args.rest[0]
             )
-            if args.second or args.minute or args.second:
+            if args.second or args.minute or args.hour:
                 timer.countdown()
         elif args.command == "stopwatch":
             timer.stopwatch()
