@@ -11,6 +11,10 @@ def clear_terminal() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
+def notify_send(msg: str) -> None:
+    os.system(f"notify-send 'tick' '{msg}'")
+
+
 class Timer:
     def __init__(
         self,
@@ -52,7 +56,7 @@ class Timer:
 
     def _rest(self, second: int = 0, minute: int = 0, hour: int = 0) -> None:
         """Rest between the sets."""
-        print("Resting...")
+        print("Resting...", end="\n")
         self._count_timer(second, minute, hour)
 
     def pomodoro(self) -> None:
@@ -65,12 +69,18 @@ class Timer:
 
         while True:
             print(f"\rPomodoro round {pomodoro_count + 1:<20}", end="\n")
+            notify_send(f"Pomodoro round {pomodoro_count + 1}")
+
             self._count_timer(minute=25)
             pomodoro_count = pomodoro_count + 1
             if pomodoro_count % 4 == 0:
+                notify_send("30 minutes rest starting...")
                 self._rest(minute=30)
+                notify_send("30 minutes rest ended.")
             else:
+                notify_send("5 minutes rest starting...")
                 self._rest(minute=5)
+                notify_send("5 minutes rest ended.")
 
     @staticmethod
     def stopwatch() -> None:
