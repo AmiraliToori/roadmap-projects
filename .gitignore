@@ -2,3 +2,5 @@ taskDB.json
 expenseDB.json
 *.bak
 *.csv
+test*.*
+env/
