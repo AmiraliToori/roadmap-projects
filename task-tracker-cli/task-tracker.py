@@ -1,380 +1,356 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
-from dataclasses import dataclass, asdict, field
-import sys
-import os
-import uuid
-from pathlib import Path
 import json
+import sys
 import argparse
+import os
 
-from typing import Any, List
-
-# --- Aesthetics Configuration ---
-
-
-@dataclass(frozen=True)
-class Colors:
-    """Catppuccin Mocha Palette (TrueColor)"""
-
-    RESET: str = "\033[0m"
-    BOLD: str = "\033[1m"
-    DIM: str = "\033[2m"
-
-    # Core Colors
-    ROSEWATER: str = "\033[38;2;245;224;220m"
-    FLAMINGO: str = "\033[38;2;242;205;205m"
-    PINK: str = "\033[38;2;245;194;231m"
-    MAUVE: str = "\033[38;2;203;166;247m"
-    RED: str = "\033[38;2;237;135;150m"
-    MAROON: str = "\033[38;2;238;153;160m"
-    PEACH: str = "\033[38;2;245;169;127m"
-    YELLOW: str = "\033[38;2;238;212;159m"
-    GREEN: str = "\033[38;2;166;227;161m"
-    TEAL: str = "\033[38;2;148;226;213m"
-    SKY: str = "\033[38;2;137;220;235m"
-    SAPPHIRE: str = "\033[38;2;122;162;247m"
-    BLUE: str = "\033[38;2;137;180;250m"
-    LAVENDER: str = "\033[38;2;180;190;254m"
-    TEXT: str = "\033[38;2;205;214;244m"
-    SUBTEXT1: str = "\033[38;2;186;194;222m"
-    OVERLAY0: str = "\033[38;2;108;112;134m"
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 
-@dataclass(frozen=True)
-class Icons:
-    """Nerd Font Glyphs"""
-
-    CHECK: str = ""
-    ERROR: str = ""
-    WARN: str = ""
-    INFO: str = ""
-    TASK: str = ""
-    CALENDAR: str = ""
-    CLOCK: str = ""
-    EDIT: str = ""
-    TRASH: str = ""
-    TODO: str = ""
-    PROGRESS: str = ""
-    DONE: str = ""
-    ARROW: str = ""
-
-
-C = Colors()
-I = Icons()
-
-# --- Application Logic ---
-
-
-@dataclass
-class Task:
-    description: str
-    id: int = str(uuid.uuid4())
-    status: str = "todo"
-    createdAt: str = (datetime.now()).strftime("%Y/%m/%d %H:%M:%S")
-    updatedAt: str = ""
-
-    @staticmethod
-    def _check_description(description: str) -> str:
-        """Validate the value and type of the description"""
-        if description.isspace():
-            raise ValueError(
-                f"{C.RED}{I.ERROR} Invalid Input!{C.RESET} The description cannot ONLY contain whitespaces!"
-            )
-
-        description_length = len(description)
-        if description_length > 100:
-            raise ValueError(
-                f"{C.RED}{I.ERROR} Length Error:{C.RESET} The description length ({description_length}) CANNOT be GREATER THAN 100 CHARACTERS."
-            )
-
-        return description
-
-    @staticmethod
-    def _check_status(status) -> str:
-        """Validate the value and type of the status"""
-        if status not in ["todo", "in-progress", "done"]:
-            raise ValueError(
-                f"{C.RED}{I.ERROR} Invalid Status!{C.RESET} Allowed values: {C.YELLOW}'todo', 'in-progress', 'done'{C.RESET}"
-            )
-
-        return status
-
-    def __post_init__(self) -> None:
-        """Check the input values of the isinstance in the initiation."""
-        self.description = self._check_description(self.description)
-        self.status = self._check_status(self.status)
-
-    def _update_date_time(self) -> None:
-        self.updatedAt = (datetime.now()).strftime("%Y/%m/%d %H:%M:%S")
-
-    def print_description(self) -> None:
-        # Determine icon color based on status
-        status_color = C.TEXT
-        status_icon = I.TODO
-        if self.status == "in-progress":
-            status_color = C.YELLOW
-            status_icon = I.PROGRESS
-        elif self.status == "done":
-            status_color = C.GREEN
-            status_icon = I.DONE
-
-        print(
-            f"{C.MAUVE}╭──────────────────────────────────────────────────────────────╮{C.RESET}"
-        )
-        print(
-            f"{C.MAUVE}│{C.RESET} {C.BOLD}{C.LAVENDER}{I.TASK} Task ID:{C.RESET} {self.id}"
-        )
-        print(f"{C.MAUVE}│{C.RESET} {C.BOLD}Description:{C.RESET} {self.description}")
-        print(
-            f"{C.MAUVE}│{C.RESET} {C.BOLD}Status:{C.RESET}      {status_color}{status_icon} {self.status.upper()}{C.RESET}"
-        )
-        print(
-            f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CALENDAR} Created:  {self.createdAt}{C.RESET}"
-        )
-        if self.updatedAt:
-            print(
-                f"{C.MAUVE}│{C.RESET} {C.DIM}{I.CLOCK} Updated:  {self.updatedAt}{C.RESET}"
-            )
-        print(
-            f"{C.MAUVE}╰──────────────────────────────────────────────────────────────╯{C.RESET}\n"
-        )
-
-    def set_description(self, new_description) -> None:
-        old_description = self.description
-        old_updated_date_time = self.updatedAt
-
-        try:
-            self.description = self._check_description(new_description[0])
-            print(f"{C.BLUE}{I.EDIT} Update Successful:{C.RESET}")
-            print(f"  {C.OVERLAY0}ID:{C.RESET} {self.id}")
-            print(f"  {C.RED}-{C.RESET} {old_description}")
-            print(f"  {C.GREEN}+{C.RESET} {self.description}")
-            self._update_date_time()
-        except Exception as e:
-            print(f"{C.RED}{I.ERROR} Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}")
-            self.description = old_description
-            self.updatedAt = old_updated_date_time
-
-    def set_status(self, input_status: str) -> None:
-        old_status = self.status
-        old_updated_date_time = self.updatedAt
-
-        try:
-            self.status = self._check_status(input_status)
-            print(f"{C.TEAL}{I.CHECK} Status Updated:{C.RESET}")
-            print(f"  {C.OVERLAY0}ID:{C.RESET} {self.id}")
-            print(f"  {C.RED}-{C.RESET} {old_status}")
-            print(f"  {C.GREEN}+{C.RESET} {self.status}")
-            self._update_date_time()
-        except Exception as e:
-            print(
-                f"{C.RED}{I.ERROR} Status Update Failed!{C.RESET}\n{C.DIM}{e}{C.RESET}"
-            )
-            self.status = old_status
-            self.updatedAt = old_updated_date_time
-
-
-def handle_path() -> str:
+def handle_path() -> Path:
+    """Handle path and directory of configs"""
     file_name = "taskDB.json"
+    directory = ".config/task-tracker/"
     home_path = os.getenv("HOME")
-    config_path = ".config/task-tracker/"
 
-    full_directory = os.path.join(home_path, config_path, file_name)
-
-    config_directory = os.path.join(home_path, config_path)
+    config_directory = os.path.join(home_path, directory)
 
     if not os.path.exists(config_directory):
         os.mkdir(config_directory)
-        print("Initialize the directory...\n\n")
 
-    return full_directory
+    full_path = os.path.join(config_directory, file_name)
+
+    return Path(full_path)
 
 
-@dataclass
 class TaskList:
-    list = []
-    file_path: str = field(default_factory=handle_path)
+    def _read_json() -> Any:
+        """Read and return the json file"""
 
-    def load_json_file(self) -> List[dict[str | Any]]:
-        """Load the data from the json file"""
-        path = Path(self.file_path)
+        def validate_database_dict(python_obj: Any) -> Any:
+            """Validate the schema and data in the python object"""
+            if not python_obj.get("id_counter"):
+                python_obj.update({"id_counter": {"counter": 1, "available_ids": []}})
+
+            if not python_obj.get("items"):
+                python_obj.update({"items": {}})
+
+            return python_obj
+
+        def update_counter(python_obj: Any) -> Any:
+            """Update the counter and fetch the maximum counter"""
+            task_items = python_obj.get("items")
+            max_number = 0
+            for id, item in task_items.items():
+                item_id = int(id)
+
+                max_number = max(item_id, max_number)
+
+            python_obj["id_counter"].update({"counter": max_number})
+
+            return python_obj
+
+        path = handle_path()
+
         try:
-            if not path.exists():
-                with open(self.file_path, "w") as f:
-                    f.write("")
-                return []
-            else:
-                with open(self.file_path, "r") as f:
-                    content = f.read()
-                    if not content.strip():  # Check for empty file
-                        return []
-                    f.seek(0)
-                    json_data = json.load(f)
+            with open(path, "r", encoding="utf-8") as f:
+                python_obj = json.load(f)
 
-                return [Task(**item) for item in json_data]
+            python_obj = validate_database_dict(python_obj)
+            python_obj = update_counter(python_obj)
 
-        except FileNotFoundError as e:
+            return python_obj
+
+        except json.JSONDecodeError as e:
             print(
-                f"{C.RED}{I.ERROR} File Not Found:{C.RESET} {self.file_path}\n{C.DIM}{e}{C.RESET}"
+                f"Something went wrong when decoding the database json file.\nMore detail: {e}"
             )
             sys.exit(1)
-        except Exception as e:
-            print(f"{C.RED}{I.ERROR} Unexpected Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
-            sys.exit(1)
 
-    def write_json_file(self) -> None:
-        """Write into json file"""
-
-        json_data = [asdict(obj) for obj in self.list]
-        try:
-            with open(self.file_path, "w") as f:
-                json.dump(json_data, f, indent=4)
         except FileNotFoundError as e:
-            print(
-                f"{C.RED}{I.ERROR} Database Missing:{C.RESET} {self.file_path}\n{C.DIM}{e}{C.RESET}"
-            )
-            sys.exit(1)
-        except Exception as e:
-            print(f"{C.RED}{I.ERROR} Write Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
+            print(f"Could not found the {f} file.\nMore detail: {e}")
             sys.exit(1)
 
-    def __post_init__(self) -> None:
-        self.list = self.load_json_file()
+    _id_counter = 0
+    _available_ids = []
+    _database_dict = _read_json()
 
-    def create_task(self, description: str) -> None:
-        new_task = Task(description)
-        self.list.append(new_task)
-        self.write_json_file()
-        print(f"{C.GREEN}{I.CHECK} Task Created Successfully!{C.RESET}")
-        print(f"  {C.BOLD}ID:{C.RESET} {new_task.id}")
-        print(f"  {C.BOLD}Desc:{C.RESET} {description}")
-
-    def return_specific_task(self, id: str) -> Task:
-        for task in self.list:
-            if task.id == id[0]:
-                return task
-
-        print(
-            f"{C.RED}{I.ERROR} Task Not Found:{C.RESET} ID {C.YELLOW}{id[0]}{C.RESET} does not exist."
+    @classmethod
+    def _load_counter(cls) -> None:
+        """Load the current ID counter"""
+        cls._id_counter = cls._database_dict.get("id_counter").get("counter", 1)
+        cls._available_ids = cls._database_dict.get("id_counter").get(
+            "available_ids", []
         )
-        sys.exit(1)
 
-    def remove_specific_task(self, id: str) -> None:
+    @classmethod
+    def _write(cls) -> None:
+        """Write the python dictionary object to json"""
+        path = handle_path()
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(cls._database_dict, f, indent=4)
+
+    @classmethod
+    def _save_id(cls) -> int:
+        """Save the ID"""
+        cls._load_counter()
+
+        if not cls._available_ids:
+            cls._id_counter = cls._id_counter + 1
+            cls._database_dict["id_counter"].update({"counter": cls._id_counter})
+
+            return cls._id_counter
+        else:
+            popped_id = cls._available_ids.pop(0)
+            cls._database_dict["id_counter"].update(
+                {"available_ids": cls._available_ids}
+            )
+
+            return popped_id
+
+    def __init__(self) -> None:
+        self._load_counter()
+        self._write()
+
+    @classmethod
+    def add_task(cls, description: str) -> None:
+        """Add a task"""
         try:
-            list_cp = self.list[:]
-            found = False
-            for task_index, task in enumerate(list_cp):
-                if list_cp[task_index].id in id:
-                    self.list.remove(task)
-                    print(
-                        f"{C.RED}{I.TRASH} Deleted Task:{C.RESET} {C.DIM}{task.id}{C.RESET}"
-                    )
-                    found = True
+            id = cls._save_id()
+            input_description = description
+            created_date = (datetime.now()).strftime("%Y/%m/%d %H:%M:%S")
+            status = "todo"
 
-            if not found:
-                print(f"{C.YELLOW}{I.WARN} No task found with ID:{C.RESET} {id}")
+            cls._database_dict["items"].update(
+                {
+                    str(id): {
+                        "description": input_description,
+                        "status": status,
+                        "createdAt": created_date,
+                        "updatedAt": "N/A",
+                    }
+                }
+            )
+
+            cls._write()
+
+            print(f"The task {id} with {description} added.")
 
         except IndexError as e:
-            print(f"{C.RED}{I.ERROR} Index Error:{C.RESET}\n{C.DIM}{e}{C.RESET}")
+            print(f"Could not found the {id} in database.\nMore detail: {e}")
             sys.exit(1)
-        except Exception as e:
+
+        except IOError as e:
             print(
-                f"{C.RED}{I.ERROR} Error Removing Task:{C.RESET}\n{C.DIM}{e}{C.RESET}"
+                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
             )
             sys.exit(1)
+
+    @classmethod
+    def delete_task(cls, id: str) -> None:
+        """Delete a task"""
+        try:
+            deleted_id = id
+            del cls._database_dict["items"][deleted_id]
+            cls._available_ids.append(deleted_id)
+
+            cls._write()
+
+            print(f"The task {id} got deleted.")
+
+        except IndexError as e:
+            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            sys.exit(1)
+
+        except IOError as e:
+            print(
+                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
+            )
+            sys.exit(1)
+
+    @staticmethod
+    def _get_current_datetime() -> str:
+        return (datetime.now()).strftime("%Y/%m/%d %H:%M:%S")
+
+    @classmethod
+    def update_status(cls, id: str, status: str) -> None:
+        """Update the status of a task"""
+        try:
+            cls._database_dict["items"][id].update(
+                {"status": status, "updatedAt": cls._get_current_datetime()}
+            )
+
+            cls._write()
+
+            print(f"The task {id} status updated to {status}.")
+
+        except IndexError as e:
+            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            sys.exit(1)
+
+        except IOError as e:
+            print(
+                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
+            )
+            sys.exit(1)
+
+    @classmethod
+    def update_description(cls, id: str, description: str) -> None:
+        """update the description of a task"""
+        try:
+            cls._database_dict["items"][id].update(
+                {"description": description, "updatedAt": cls._get_current_datetime()}
+            )
+
+            cls._write()
+
+            print(f"The task {id} description updated.\nNew description: {description}")
+
+        except IndexError as e:
+            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            sys.exit(1)
+
+        except IOError as e:
+            print(
+                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
+            )
+            sys.exit(1)
+
+    @classmethod
+    def display_tasks(cls) -> None:
+        """Print all the tasks"""
+        dict_items = cls._database_dict.get("items")
+
+        for id, item in dict_items.items():
+            item_id = id
+            description = item.get("description", "N/A")
+            status = item.get("status", "N/A")
+            created_date = item.get("createdAt", "N/A")
+            update_date = item.get("updatedAt", "N/A")
+
+            if status == "done":
+                status = "[x]"
+            elif status == "in-progress":
+                status = "[-]"
+            elif status == "todo":
+                status = "[ ]"
+
+            print(
+                f"{status} {item_id} {created_date} (U: {update_date}) -> {description}"
+            )
+
+    @classmethod
+    def filter_display_tasks(cls, status: str) -> None:
+        """Print specific tasks with requested status"""
+        dict_items = cls._database_dict["items"]
+
+        for id, item in dict_items.items():
+            item_id = id
+            description = item.get("description", "N/A")
+            item_status = item.get("status", "N/A")
+            created_date = item.get("createdAt", "N/A")
+            update_date = item.get("updatedAt", "N/A")
+
+            if status == item_status:
+                if status == "done":
+                    status = "[x]"
+                elif status == "in-progress":
+                    status = "[-]"
+                elif status == "todo":
+                    status = "[ ]"
+
+            print(
+                f"{status} {item_id} {created_date} (U: {update_date}) -> {description}"
+            )
 
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=f"{C.MAUVE}{I.TASK} Task-CLI Tracker{C.RESET} - Manage your tasks efficiently."
+        description="Task-CLI Tracker - Manage your tasks efficiently."
     )
 
     subparsers = parser.add_subparsers(dest="command", help="The available commands")
 
     add_parser = subparsers.add_parser("add", help="Add task.")
-    add_parser.add_argument("description", type=str, help="Task description", nargs=1)
+    add_parser.add_argument(
+        "--description", required=True, type=str, help="Task description", nargs=1
+    )
 
     list_parser = subparsers.add_parser("list", help="List the tasks by status or all.")
     list_parser.add_argument(
-        "list",
-        help="[type]",
-        default="all",
-        nargs="?",
-        choices=["all", "in-progress", "todo", "done"],
+        "--status",
+        help="Display a specific tasks with desired status",
+        required=False,
+        nargs=1,
+        choices=["in-progress", "todo", "done"],
     )
 
     update_parser = subparsers.add_parser("update", help="Update description")
-    update_parser.add_argument("id", type=str, help="ID of the task", nargs=1)
-    update_parser.add_argument("description", type=str, help="New description", nargs=1)
+    update_parser.add_argument(
+        "--id", type=str, required=True, help="ID of the task", nargs=1
+    )
+    update_parser.add_argument(
+        "--description", type=str, required=True, help="New description", nargs=1
+    )
 
     delete_parser = subparsers.add_parser("delete", help="Delete a task")
-    delete_parser.add_argument("id", type=str, help="ID of the task", nargs="+")
+    delete_parser.add_argument(
+        "--id", type=str, required=True, help="ID of the task", nargs=1
+    )
 
     mark_progress_parser = subparsers.add_parser(
         "mark-in-progress", help="Mark a task as 'in-progress'"
     )
-    mark_progress_parser.add_argument("id", type=str, help="ID of the task", nargs=1)
+    mark_progress_parser.add_argument(
+        "--id", type=str, required=True, help="ID of the task", nargs=1
+    )
 
     mark_done_parser = subparsers.add_parser("mark-done", help="Mark a task as 'done'")
-    mark_done_parser.add_argument("id", type=str, help="ID of the task", nargs=1)
+    mark_done_parser.add_argument(
+        "--id", type=str, required=True, help="ID of the task", nargs=1
+    )
 
     mark_todo_parser = subparsers.add_parser("mark-todo", help="Mark a task as 'todo'")
-    mark_todo_parser.add_argument("id", help="ID of the task", nargs=1)
+    mark_todo_parser.add_argument(
+        "--id", type=str, required=True, help="ID of the task", nargs=1
+    )
 
     args = parser.parse_args()
 
     return args
 
 
-def main():
+def main() -> None:
     args = arguments()
+
     task_list = TaskList()
 
     if args.command == "add":
-        task_list.create_task(args.description[0])
+        task_list.add_task(args.description[0])
 
     if args.command == "mark-todo":
-        task = task_list.return_specific_task(args.id)
-        task.set_status("todo")
-        task_list.write_json_file()
+        task_list.update_status(args.id[0], "todo")
 
     if args.command == "mark-in-progress":
-        task = task_list.return_specific_task(args.id)
-        task.set_status("in-progress")
-        task_list.write_json_file()
+        task_list.update_status(args.id[0], "in-progress")
 
     if args.command == "mark-done":
-        task = task_list.return_specific_task(args.id)
-        task.set_status("done")
-        task_list.write_json_file()
+        task_list.update_status(args.id[0], "done")
 
     if args.command == "delete":
-        task_list.remove_specific_task(args.id)
-        task_list.write_json_file()
-
+        task_list.delete_task(args.id[0])
     if args.command == "update":
-        task = task_list.return_specific_task(args.id)
-        task.set_description(args.description)
-        task_list.write_json_file()
+        task_list.update_description(args.id[0], args.description[0])
 
     if args.command == "list":
-        count = 0
-        if args.list == "all":
-            for task in task_list.list:
-                task.print_description()
-                count += 1
-        elif args.list in ["done", "in-progress", "todo"]:
-            for task in task_list.list:
-                if task.status == args.list:
-                    task.print_description()
-                    count += 1
-
-        if count == 0:
-            print(
-                f"{C.OVERLAY0}{I.INFO} No tasks found for category: {args.list}{C.RESET}"
-            )
+        if args.status:
+            task_list.filter_display_tasks(args.status[0])
+        else:
+            task_list.display_tasks()
 
 
 if __name__ == "__main__":
