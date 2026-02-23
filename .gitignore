@@ -1,5 +1,4 @@
-taskDB.json
-expenseDB.json
+*.json
 *.bak
 *.csv
 test*.*
