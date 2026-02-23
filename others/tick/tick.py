@@ -212,10 +212,10 @@ def arguments() -> argparse.Namespace:
     )
 
     countdown_parser.add_argument(
-        "--rep",
+        "--set",
         help="The number of sets you want to do it.",
         type=validate_rep_input,
-        metavar="<REP>",
+        metavar="<SET>",
         required=False,
         nargs=1,
         default=[1],
@@ -246,7 +246,7 @@ def main() -> None:
     try:
         if args.command == "countdown":
             timer = Timer(
-                args.second[0], args.minute[0], args.hour[0], args.rep[0], args.rest[0]
+                args.second[0], args.minute[0], args.hour[0], args.set[0], args.rest[0]
             )
             if args.second or args.minute or args.hour:
                 timer.countdown()
