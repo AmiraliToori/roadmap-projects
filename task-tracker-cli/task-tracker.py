@@ -10,6 +10,78 @@ from pathlib import Path
 from typing import Any
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Catppuccin Mocha · ANSI TrueColor palette
+# ─────────────────────────────────────────────────────────────────────────────
+_MAUVE   = "\033[38;2;203;166;247m"   # accent / headers
+_TEXT    = "\033[38;2;205;214;244m"   # primary text
+_GREEN   = "\033[38;2;166;227;161m"   # success / done
+_RED     = "\033[38;2;243;139;168m"   # error
+_YELLOW  = "\033[38;2;249;226;175m"   # in-progress / warning
+_BLUE    = "\033[38;2;137;180;250m"   # IDs / numeric accents
+_PEACH   = "\033[38;2;250;179;135m"   # delete / destructive
+_SUBTEXT = "\033[38;2;166;173;200m"   # dates / secondary info
+_BOLD    = "\033[1m"
+_DIM     = "\033[2m"
+_RESET   = "\033[0m"
+
+# Nerd Font glyphs
+_ICON_ADD      = "\uf067"   # 
+_ICON_DELETE   = "\uf1f8"   # 
+_ICON_EDIT     = "\uf044"   # 
+_ICON_BOLT     = "\uf0e7"   # 
+_ICON_DONE     = "\uf00c"   # 
+_ICON_PROGRESS = "\uf110"   # 
+_ICON_TODO     = "\uf10c"   # 
+_ICON_DB       = "\uf1c0"   # 
+_ICON_WARN     = "\uf071"   # 
+_ICON_BAN      = "\uf05e"   # 
+_ICON_ARROW    = "\uf061"   # 
+
+
+def _fmt_error_db(msg: str, detail: Any) -> str:
+    """Format a database-level error (JSON decode / schema)."""
+    return (
+        f"\n  {_RED}{_BOLD}{_ICON_DB}  Database Error{_RESET}\n"
+        f"  {_RED}{msg}{_RESET}\n"
+        f"  {_DIM}{_SUBTEXT}Detail › {detail}{_RESET}\n"
+    )
+
+
+def _fmt_error_notfound(item_id: Any, detail: Any) -> str:
+    """Format a not-found error."""
+    return (
+        f"\n  {_RED}{_BOLD}{_ICON_WARN}  Not Found{_RESET}\n"
+        f"  {_RED}Could not find task {_BOLD}#{item_id}{_RESET}{_RED} in the database.{_RESET}\n"
+        f"  {_DIM}{_SUBTEXT}Detail › {detail}{_RESET}\n"
+    )
+
+
+def _fmt_error_io(detail: Any) -> str:
+    """Format an I/O write error."""
+    return (
+        f"\n  {_RED}{_BOLD}{_ICON_BAN}  I/O Error{_RESET}\n"
+        f"  {_RED}Something went wrong while writing to the database.{_RESET}\n"
+        f"  {_DIM}{_SUBTEXT}Detail › {detail}{_RESET}\n"
+    )
+
+
+def _color_status(status_str: str) -> str:
+    """Return a colored, icon-prefixed status token for any status string variant."""
+    s = status_str
+    if s in ("done", "[x]"):
+        return f"{_GREEN}{_BOLD}{_ICON_DONE}  [x]{_RESET}"
+    elif s in ("in-progress", "[-]"):
+        return f"{_YELLOW}{_BOLD}{_ICON_PROGRESS}  [-]{_RESET}"
+    elif s in ("todo", "[ ]"):
+        return f"{_MAUVE}{_BOLD}{_ICON_TODO}  [ ]{_RESET}"
+    else:
+        return f"{_SUBTEXT}{s}{_RESET}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+
 def handle_path() -> Path:
     """Handle path and directory of configs"""
     file_name = "taskDB.json"
@@ -65,13 +137,11 @@ class TaskList:
             return python_obj
 
         except json.JSONDecodeError as e:
-            print(
-                f"Something went wrong when decoding the database json file.\nMore detail: {e}"
-            )
+            print(_fmt_error_db("Failed to decode the database JSON file.", e))
             sys.exit(1)
 
         except FileNotFoundError as e:
-            print(f"Could not found the {f} file.\nMore detail: {e}")
+            print(_fmt_error_db("Database file could not be found.", e))
             sys.exit(1)
 
     _id_counter = 0
@@ -138,16 +208,18 @@ class TaskList:
 
             cls._write()
 
-            print(f"The task {id} with {description} added.")
+            print(
+                f"\n  {_GREEN}{_BOLD}{_ICON_ADD}  Task Added{_RESET}\n"
+                f"  {_SUBTEXT}ID          {_RESET}{_BLUE}{_BOLD}#{id}{_RESET}\n"
+                f"  {_SUBTEXT}Description {_RESET}{_TEXT}{description}{_RESET}\n"
+            )
 
         except IndexError as e:
-            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            print(_fmt_error_notfound(id, e))
             sys.exit(1)
 
         except IOError as e:
-            print(
-                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
-            )
+            print(_fmt_error_io(e))
             sys.exit(1)
 
     @classmethod
@@ -160,16 +232,17 @@ class TaskList:
 
             cls._write()
 
-            print(f"The task {id} got deleted.")
+            print(
+                f"\n  {_PEACH}{_BOLD}{_ICON_DELETE}  Task Deleted{_RESET}\n"
+                f"  {_SUBTEXT}ID {_RESET}{_BLUE}{_BOLD}#{id}{_RESET}{_PEACH} has been removed from the database.{_RESET}\n"
+            )
 
         except IndexError as e:
-            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            print(_fmt_error_notfound(id, e))
             sys.exit(1)
 
         except IOError as e:
-            print(
-                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
-            )
+            print(_fmt_error_io(e))
             sys.exit(1)
 
     @staticmethod
@@ -186,16 +259,18 @@ class TaskList:
 
             cls._write()
 
-            print(f"The task {id} status updated to {status}.")
+            print(
+                f"\n  {_MAUVE}{_BOLD}{_ICON_BOLT}  Status Updated{_RESET}\n"
+                f"  {_SUBTEXT}ID         {_RESET}{_BLUE}{_BOLD}#{id}{_RESET}\n"
+                f"  {_SUBTEXT}New Status {_RESET}{_color_status(status)}\n"
+            )
 
         except IndexError as e:
-            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            print(_fmt_error_notfound(id, e))
             sys.exit(1)
 
         except IOError as e:
-            print(
-                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
-            )
+            print(_fmt_error_io(e))
             sys.exit(1)
 
     @classmethod
@@ -208,16 +283,18 @@ class TaskList:
 
             cls._write()
 
-            print(f"The task {id} description updated.\nNew description: {description}")
+            print(
+                f"\n  {_MAUVE}{_BOLD}{_ICON_EDIT}  Description Updated{_RESET}\n"
+                f"  {_SUBTEXT}ID          {_RESET}{_BLUE}{_BOLD}#{id}{_RESET}\n"
+                f"  {_SUBTEXT}Description {_RESET}{_TEXT}{description}{_RESET}\n"
+            )
 
         except IndexError as e:
-            print(f"Could not found the {id} in database.\nMore detail: {e}")
+            print(_fmt_error_notfound(id, e))
             sys.exit(1)
 
         except IOError as e:
-            print(
-                f"Something went wrong when trying to write the operations.\nMore detail: {e}"
-            )
+            print(_fmt_error_io(e))
             sys.exit(1)
 
     @classmethod
@@ -240,7 +317,12 @@ class TaskList:
                 status = "[ ]"
 
             print(
-                f"{status} {item_id} {created_date} (U: {update_date}) -> {description}"
+                f"  {_color_status(status)}  "
+                f"{_BLUE}{_BOLD}#{item_id:<4}{_RESET}  "
+                f"{_SUBTEXT}{created_date}{_RESET}  "
+                f"{_DIM}{_SUBTEXT}(U: {update_date}){_RESET}  "
+                f"{_MAUVE}{_ICON_ARROW}{_RESET}  "
+                f"{_TEXT}{description}{_RESET}"
             )
 
     @classmethod
@@ -264,7 +346,12 @@ class TaskList:
                     status = "[ ]"
 
             print(
-                f"{status} {item_id} {created_date} (U: {update_date}) -> {description}"
+                f"  {_color_status(status)}  "
+                f"{_BLUE}{_BOLD}#{item_id:<4}{_RESET}  "
+                f"{_SUBTEXT}{created_date}{_RESET}  "
+                f"{_DIM}{_SUBTEXT}(U: {update_date}){_RESET}  "
+                f"{_MAUVE}{_ICON_ARROW}{_RESET}  "
+                f"{_TEXT}{description}{_RESET}"
             )
 
 
